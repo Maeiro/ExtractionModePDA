@@ -18,6 +18,7 @@ Adds Extraction Mode screens to the ProjectRPGExpanded Survivor PDA.
 [*]Adds a Zombies category to ProjectRPGExpanded's server settings with per-stage Custom World Danger controls for zombie behavior, perception, infection and respawn rules.
 [*]Uses the PDA's own language setting, with English and Brazilian Portuguese text.
 [*]Hides the native Extraction Mode interface while its PDA interface is active.
+[*]Closes integrated screens with the PDA, uses the PDA theme for upgrades and contacts, and fits the garage screen to the PDA viewport.
 [*]Hides the ProjectRPGExpanded player portrait while the world map is open to prevent map icon rendering issues, and keeps the player card behind Ergonomic UI.[/list]
 [h2]Requirements[/h2]
 [list][*]Project Zomboid Build 42.21 or newer
@@ -27,5 +28,5 @@ This addon is independent of Viewpoint Extraction Support. If the installed PDA 
 
 Workshop ID: 3831366933
 Mod ID: ExtractionModePDA"
-	"changenote" "0.1.4: Adds custom zombie rules and raid timing to the PDA."
+	"changenote" "0.1.5: Fixes integrated screens remaining open after PDA close, applies the PDA theme to upgrades and contacts, and keeps the garage inside the PDA viewport."
 }

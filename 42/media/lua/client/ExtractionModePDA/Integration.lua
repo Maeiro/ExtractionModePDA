@@ -345,7 +345,7 @@ local function capture(route, result, args)
                 panel:applyTabState()
                 panel.lastLayoutKey = nil
             end
-            if route.name ~= "openGaragePanel" and not panel._empdaPageLayout then
+            if not panel._empdaPageLayout then
                 panel._empdaPageLayout = true
                 local original = panel.prerender
                 panel.prerender = function(owner, ...)
@@ -353,6 +353,59 @@ local function capture(route, result, args)
                     local docked = owner._pdaDock == true and state.ui.instance ~= nil
                     if docked then state.viewportPanel = owner end
                     local rect = docked and state.pda.DockRect(state.ui.instance)
+                    if docked and route.name == "openGaragePanel" and rect then
+                        local scale = math.min(1, rect.w / 780, rect.h / 706)
+                        if owner._empdaGarageScale ~= scale then
+                            owner._empdaGarageScale = scale
+                            owner:setWidth(780 * scale)
+                            owner:setHeight(706 * scale)
+                            for _, child in pairs(owner.children or {}) do
+                                if type(child) == "table" and child.setX and child.setY
+                                    and child.setWidth and child.setHeight then
+                                    child._empdaGarageBaseX = child._empdaGarageBaseX or child.x
+                                    child._empdaGarageBaseY = child._empdaGarageBaseY or child.y
+                                    child._empdaGarageBaseW = child._empdaGarageBaseW or child.width
+                                    child._empdaGarageBaseH = child._empdaGarageBaseH or child.height
+                                    child:setX(child._empdaGarageBaseX * scale)
+                                    child:setY(child._empdaGarageBaseY * scale)
+                                    child:setWidth(child._empdaGarageBaseW * scale)
+                                    child:setHeight(child._empdaGarageBaseH * scale)
+                                    if child.itemheight then
+                                        child._empdaGarageBaseItemHeight = child._empdaGarageBaseItemHeight or child.itemheight
+                                        child.itemheight = math.max(1, child._empdaGarageBaseItemHeight * scale)
+                                    end
+                                end
+                            end
+                            for _, method in ipairs({ "drawText", "drawTextCentre", "drawRect", "drawRectBorder", "drawTextureScaled" }) do
+                                local drawMethod = method
+                                local originalDraw = owner[method]
+                                if type(originalDraw) == "function" and not owner["_empdaGarageDraw_" .. method] then
+                                    owner["_empdaGarageDraw_" .. drawMethod] = originalDraw
+                                    owner[drawMethod] = function(self, ...)
+                                        local args = pack(...)
+                                        if drawMethod == "drawText" or drawMethod == "drawTextCentre" then
+                                            args[2] = args[2] * self._empdaGarageScale
+                                            args[3] = args[3] * self._empdaGarageScale
+                                        elseif drawMethod == "drawRect" or drawMethod == "drawRectBorder" then
+                                            args[1] = args[1] * self._empdaGarageScale
+                                            args[2] = args[2] * self._empdaGarageScale
+                                            args[3] = args[3] * self._empdaGarageScale
+                                            args[4] = args[4] * self._empdaGarageScale
+                                        elseif drawMethod == "drawTextureScaled" then
+                                            args[2] = args[2] * self._empdaGarageScale
+                                            args[3] = args[3] * self._empdaGarageScale
+                                            args[4] = args[4] * self._empdaGarageScale
+                                            args[5] = args[5] * self._empdaGarageScale
+                                        else
+                                            args[2] = args[2] * self._empdaGarageScale
+                                            args[3] = args[3] * self._empdaGarageScale
+                                        end
+                                        return originalDraw(self, unpack(args, 1, args.n))
+                                    end
+                                end
+                            end
+                        end
+                    end
                     local key = tostring(docked) .. ":" .. tostring(rect and rect.w) .. ":" .. tostring(rect and rect.h)
                         .. ":" .. tostring(pdaLanguageCode())
                     if owner._empdaPageSize ~= key then
@@ -548,7 +601,8 @@ local function dockEntry(route)
         key = route.title,
         fallback = route.fallback,
         icon = route.icon,
-        fill = route.name == "openUpgradePanel" or route.name == "openQuestPanel",
+        fill = route.name == "openUpgradePanel" or route.name == "openQuestPanel"
+            or route.name == "openGaragePanel",
         _extractionModePDA = route.name,
     }
 end
@@ -817,6 +871,67 @@ local function installDockSkin(pda)
         return originalViewport(playerNum, ...)
     end
     local originalRect, originalScreen = pda.DockRect, pda.DrawScreen
+    local function extractionMainPageActive()
+        local ui = state.ui and state.ui.instance
+        local info = ui and ui._pdaTop and pda._docked[ui._pdaTop]
+        return info and mainPages[info.entry._extractionModePDA] ~= nil or false
+    end
+    local function installNeatUIHook()
+        if state.neatUIHook then return end
+        local ok, neatUI = pcall(require, "ViewpointExtractionSupport/NeatUI")
+        if not ok or type(neatUI) ~= "table" or type(neatUI.sync) ~= "function" then return end
+        local originalSync = neatUI.sync
+        local requested = true
+        if type(neatUI.isRequested) == "function" then requested = neatUI.isRequested() end
+        if state.neatOption == nil then
+            state.neatOption = { getValue = function() return requested end }
+        end
+        local disabledOption = { getValue = function() return false end }
+        state.neatUIHook = function(option)
+            if option ~= nil then
+                if type(option) == "boolean" then
+                    local enabled = option
+                    state.neatOption = { getValue = function() return enabled end }
+                else
+                    state.neatOption = option
+                end
+            end
+            return originalSync(extractionMainPageActive() and disabledOption or state.neatOption)
+        end
+        neatUI.sync = state.neatUIHook
+    end
+    local function closeExtractionPages()
+        for _, route in ipairs(routes) do
+            if mainPages[route.name] then
+                local panel = resolvedPanel(route)
+                if panel and panel._pdaDock then
+                    local closed = false
+                    for _, method in ipairs({ "onCloseX", "close", "onClose" }) do
+                        local callback = panel[method]
+                        local inherited = method == "close"
+                            and ((ISPanel and callback == ISPanel.close)
+                                or (ISCollapsableWindow and callback == ISCollapsableWindow.close))
+                        if not closed and type(callback) == "function" and not inherited then
+                            closed = pcall(callback, panel)
+                        end
+                    end
+                    pcall(function() panel:setVisible(false) end)
+                    if panel.removeFromUIManager then pcall(panel.removeFromUIManager, panel) end
+                    if route.name == "openUpgradePanel" then ExtractionMode.UpgradePanelInstance = nil
+                    elseif route.name == "openQuestPanel" then ExtractionMode.QuestPanelInstance = nil
+                    elseif route.name == "openGaragePanel" then ExtractionMode.GaragePanelInstance = nil end
+                end
+            end
+        end
+    end
+    if type(pda.Undock) == "function" and pda.Undock ~= state.undockWrapper then
+        local originalUndock = pda.Undock
+        state.undockWrapper = function(ui, ...)
+            closeExtractionPages()
+            return originalUndock(ui, ...)
+        end
+        pda.Undock = state.undockWrapper
+    end
     local function mainPage(ui)
         local info = ui and ui._pdaTop and pda._docked[ui._pdaTop]
         return info and mainPages[info.entry._extractionModePDA] ~= nil
@@ -839,6 +954,11 @@ local function installDockSkin(pda)
     pda.DockTick = function(ui, ...)
         local active = oldDockTick(ui, ...)
         for _, window in ipairs(active or {}) do styleWindow(window, pda.P) end
+        installNeatUIHook()
+        if state.neatUIHook and state.neatDocked ~= extractionMainPageActive() then
+            state.neatDocked = extractionMainPageActive()
+            state.neatUIHook(state.neatOption)
+        end
         return active
     end
 end
