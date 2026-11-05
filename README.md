@@ -15,8 +15,8 @@ The integration is independent of Viewpoint Extraction Support. Install this mod
 ## Features
 
 - Adds an Extraction tab and makes it available as the PDA's initial screen.
-- Routes Extraction Mode's destination, upgrade, contact, garage, deploy, social, administrative, and debug screens through the PDA.
-- Closes integrated upgrade, mission, barter, and garage screens when the PDA closes, keeps upgrades and contact screens in the PDA theme, and resizes the garage page to fit the PDA viewport.
+- Provides dedicated PDA pages for the overview, upgrades, missions, barter, and garage, with a shared layout and scrolling. The Garage page follows the original two-column layout, with saved vehicles and trailers beside the preview and controls.
+- Routes deployment, invitations, and administrative and debug tools through the PDA's window docking.
 - Provides a dashboard with destination selection, raid readiness, hideout generator controls, and a mission summary.
 - Shows a contextual board button in Operation Status while Extraction Mode makes boarding available, using its native action.
 - Lets each character select an unfinished mission to track, showing its objectives and requirements on the dashboard.

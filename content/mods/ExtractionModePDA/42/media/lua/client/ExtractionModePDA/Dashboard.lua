@@ -1,4 +1,5 @@
 local Tracking = require "ExtractionModePDA/QuestTracking"
+local Pages = require "ExtractionModePDA/Pages"
 local Dashboard = {}
 local sample = {}
 
@@ -58,12 +59,13 @@ function Dashboard.new(context)
     local function refreshSample(data, definition)
         local now = getTimestampMs()
         local id = definition and definition.id
-        if sample.player == player() and sample.quest == id and now - (sample.at or 0) < 500 then return end
+        if sample.player == player() and sample.quest == id and sample.at and now - sample.at < 500 then return sample end
         sample = { player = player(), quest = id, at = now, gasoline = 0, counts = {} }
         if player() then
             sample.gasoline = ExtractionMode.Generator.availableGasoline(player():getInventory())
             if definition then sample.counts = ExtractionMode.Quests.requirementCounts(player(), definition.requirements or {}) end
         end
+        return sample
     end
     local function trackedFlow(data, definition, width)
         local api, Layout = ExtractionMode.Quests, ExtractionMode.TextLayout
@@ -183,7 +185,7 @@ function Dashboard.new(context)
     end
     local function drawActions(ui, pda, row, x, y)
         for _, item in ipairs(row.items) do
-            button(ui, pda, x + item.x, y + item.y, item.width, item.label, item.action, item.enabled, false, {primary = item.primary})
+            button(ui, pda, x + item.x, y + item.y, item.width, item.label, item.action, item.enabled, item.selected, {primary = item.primary})
         end
     end
     local function operationAction(data)
@@ -234,14 +236,44 @@ function Dashboard.new(context)
         return choice.deathBlocked == true or (choice.locationRefresh and choice.locationRefresh.blocked and not choice.activeRaidKey)
             or (choice.vehiclesBlocked == true and data.playerInVehicle == true)
     end
+    local function beginBody(ui, top)
+        local left, width, bottom = 18, ui.width - 36, ui.height - 18
+        local height = math.max(1, bottom - top)
+        local scroll = math.max(0, math.min(ui._empdaExtractionScroll or 0,
+            math.max(0, (ui._empdaExtractionContentH or 0) - height)))
+        ui:setStencilRect(left, top, width, height)
+        return {x = left, w = width, y = top - scroll, top = top, bottom = bottom, h = height, scroll = scroll}
+    end
+    local function endBody(ui, pda, body, y)
+        ui:clearStencilRect()
+        ui._empdaExtractionContentH, ui._empdaExtractionScroll = y + body.scroll - body.top + 12, body.scroll
+        ui._empdaExtractionViewport = {x = body.x, y = body.top, w = body.w, h = body.h}
+        local valid = {}
+        for _, rect in ipairs(ui._empdaExtractionHits) do
+            if rect.navigation or (rect.y >= body.top and rect.y + rect.h <= body.bottom) then
+                valid[#valid + 1] = rect
+            end
+        end
+        ui._empdaExtractionHits = valid
+        if ui._empdaExtractionContentH > body.h then
+            local muted = pda.P.muted
+            ui:drawTextRight(text("ScrollHint", "Scroll to see more"), body.x + body.w - 8,
+                body.bottom - ExtractionMode.TextLayout.height(UIFont.Small), muted[1], muted[2], muted[3], 1, UIFont.Small)
+        end
+    end
+    view.pages = Pages.new(context, {
+        modeText = modeText, player = player, inside = inside, send = send, allowed = allowed,
+        refreshSample = refreshSample,
+        panel = panel, flow = drawFlow, actions = actionRow, drawActions = drawActions,
+        button = button, hit = hit, buttonHeight = function() return view.buttonH end,
+        beginBody = beginBody, endBody = endBody,
+    })
     function view.render(ui, pda, top)
         local data, Layout, config = getState(0), ExtractionMode.TextLayout, ExtractionMode.Config
-        local left, width, bottom = 18, ui.width - 36, ui.height - 18
-        local viewportH = math.max(1, bottom - top)
-        local scroll = math.min(ui._empdaExtractionScroll or 0, math.max(0, (ui._empdaExtractionContentH or 0) - viewportH))
-        local y, gap, pad = top - scroll, 18, 18
+        local body = beginBody(ui, top)
+        local left, width = body.x, body.w
+        local y, gap, pad = body.y, 18, 18
         local narrow = width < 760
-        ui:setStencilRect(left, top, width, viewportH)
         local operationW = narrow and width or math.floor(width * 0.56)
         local contentW = operationW - 2 * pad
         local choosing = data.state == config.STATE_HIDEOUT and data.pvpveLobby ~= true
@@ -434,18 +466,7 @@ function Dashboard.new(context)
         local extraActions = actionRow(extraItems, width)
         drawActions(ui, pda, extraActions, left, y)
         y = y + extraActions.height
-        ui:clearStencilRect()
-        ui._empdaExtractionContentH, ui._empdaExtractionScroll = y + scroll - top + 12, scroll
-        ui._empdaExtractionViewport = {x = left, y = top, w = width, h = viewportH}
-        local valid = {}
-        for _, rect in ipairs(ui._empdaExtractionHits) do
-            if rect.navigation or (rect.y >= top and rect.y + rect.h <= bottom) then valid[#valid + 1] = rect end
-        end
-        ui._empdaExtractionHits = valid
-        if ui._empdaExtractionContentH > viewportH then
-            ui:drawTextRight(text("ScrollHint", "Scroll to see more"), left + width - 8, bottom - Layout.height(UIFont.Small),
-                pda.P.muted[1], pda.P.muted[2], pda.P.muted[3], 1, UIFont.Small)
-        end
+        endBody(ui, pda, body, y)
     end
     return view
 end

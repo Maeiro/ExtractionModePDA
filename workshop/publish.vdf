@@ -10,7 +10,8 @@
 Adds Extraction Mode screens to the ProjectRPGExpanded Survivor PDA.
 [h2]Features[/h2]
 [list][*]Adds an Extraction tab and lets you choose it as the PDA's startup screen.
-[*]Opens destination, hideout upgrade, contact and trade, garage, deployment, social, admin and debug screens inside the PDA.
+[*]Provides dedicated PDA pages for the overview, upgrades, missions, barter and garage, with scrolling and the original garage layout.
+[*]Integrates destination selection, deployment, social, administration and debug screens with the PDA.
 [*]Shows destination, team readiness, hideout generator controls and a mission summary on the dashboard.
 [*]Shows a contextual boarding button when Extraction Mode allows boarding, using its native action.
 [*]Lets you track an unfinished mission and see its objectives and requirements on the dashboard.
@@ -18,7 +19,7 @@ Adds Extraction Mode screens to the ProjectRPGExpanded Survivor PDA.
 [*]Adds a Zombies category to ProjectRPGExpanded's server settings with per-stage Custom World Danger controls for zombie behavior, perception, infection and respawn rules.
 [*]Uses the PDA's own language setting, with English and Brazilian Portuguese text.
 [*]Hides the native Extraction Mode interface while its PDA interface is active.
-[*]Closes integrated screens with the PDA, uses the PDA theme for upgrades and contacts, and fits the garage screen to the PDA viewport.
+[*]Closes integrated pages with the PDA and applies the PDA theme throughout.
 [*]Hides the ProjectRPGExpanded player portrait while the world map is open to prevent map icon rendering issues, and keeps the player card behind Ergonomic UI.[/list]
 [h2]Requirements[/h2]
 [list][*]Project Zomboid Build 42.21 or newer
@@ -28,5 +29,5 @@ This addon is independent of Viewpoint Extraction Support. If the installed PDA 
 
 Workshop ID: 3831366933
 Mod ID: ExtractionModePDA"
-	"changenote" "0.1.5: Fixes integrated screens remaining open after PDA close, applies the PDA theme to upgrades and contacts, and keeps the garage inside the PDA viewport."
+	"changenote" "0.1.6: Rebuilds upgrades, missions, barter and garage as PDA-native pages; restores the original garage layout and brings back barter item icons and normal scroll direction."
 }

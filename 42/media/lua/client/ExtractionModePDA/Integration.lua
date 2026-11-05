@@ -1,8 +1,10 @@
 local Dashboard = require "ExtractionModePDA/Dashboard"
-local QuestTracking = require "ExtractionModePDA/QuestTracking"
 local Integration = {}
 local navigate
-local mainPages = { openUpgradePanel = "upgrades", openQuestPanel = "quests", openGaragePanel = "garage" }
+local mainPages = {
+    openControllerPanel = "home", openTownPicker = "home",
+    openUpgradePanel = "upgrades", openQuestPanel = "quests", openGaragePanel = "garage",
+}
 
 local routes = {
     {
@@ -330,122 +332,7 @@ end
 
 local function capture(route, result, args)
     local panel = panelFromResult(route, result, args)
-    if panel then
-        state.instances[route.name] = panel
-        if mainPages[route.name] then
-            state.section = route.name == "openQuestPanel" and state.section == "barter" and "barter" or mainPages[route.name]
-            panel.returnToController = false
-            if route.name == "openQuestPanel" then
-                QuestTracking.installPanel(panel, dashboardText)
-                panel.activeTab = state.section == "barter" and "barter" or "quests"
-                if state.requestedQuest then
-                    panel.expandedQuestId, panel._empdaFocusQuest = state.requestedQuest, state.requestedQuest
-                    state.requestedQuest = nil
-                end
-                panel:applyTabState()
-                panel.lastLayoutKey = nil
-            end
-            if not panel._empdaPageLayout then
-                panel._empdaPageLayout = true
-                local original = panel.prerender
-                panel.prerender = function(owner, ...)
-                    local previous = state.viewportPanel
-                    local docked = owner._pdaDock == true and state.ui.instance ~= nil
-                    if docked then state.viewportPanel = owner end
-                    local rect = docked and state.pda.DockRect(state.ui.instance)
-                    if docked and route.name == "openGaragePanel" and rect then
-                        local scale = math.min(1, rect.w / 780, rect.h / 706)
-                        if owner._empdaGarageScale ~= scale then
-                            owner._empdaGarageScale = scale
-                            owner:setWidth(780 * scale)
-                            owner:setHeight(706 * scale)
-                            for _, child in pairs(owner.children or {}) do
-                                if type(child) == "table" and child.setX and child.setY
-                                    and child.setWidth and child.setHeight then
-                                    child._empdaGarageBaseX = child._empdaGarageBaseX or child.x
-                                    child._empdaGarageBaseY = child._empdaGarageBaseY or child.y
-                                    child._empdaGarageBaseW = child._empdaGarageBaseW or child.width
-                                    child._empdaGarageBaseH = child._empdaGarageBaseH or child.height
-                                    child:setX(child._empdaGarageBaseX * scale)
-                                    child:setY(child._empdaGarageBaseY * scale)
-                                    child:setWidth(child._empdaGarageBaseW * scale)
-                                    child:setHeight(child._empdaGarageBaseH * scale)
-                                    if child.itemheight then
-                                        child._empdaGarageBaseItemHeight = child._empdaGarageBaseItemHeight or child.itemheight
-                                        child.itemheight = math.max(1, child._empdaGarageBaseItemHeight * scale)
-                                    end
-                                end
-                            end
-                            for _, method in ipairs({ "drawText", "drawTextCentre", "drawRect", "drawRectBorder", "drawTextureScaled" }) do
-                                local drawMethod = method
-                                local originalDraw = owner[method]
-                                if type(originalDraw) == "function" and not owner["_empdaGarageDraw_" .. method] then
-                                    owner["_empdaGarageDraw_" .. drawMethod] = originalDraw
-                                    owner[drawMethod] = function(self, ...)
-                                        local args = pack(...)
-                                        if drawMethod == "drawText" or drawMethod == "drawTextCentre" then
-                                            args[2] = args[2] * self._empdaGarageScale
-                                            args[3] = args[3] * self._empdaGarageScale
-                                        elseif drawMethod == "drawRect" or drawMethod == "drawRectBorder" then
-                                            args[1] = args[1] * self._empdaGarageScale
-                                            args[2] = args[2] * self._empdaGarageScale
-                                            args[3] = args[3] * self._empdaGarageScale
-                                            args[4] = args[4] * self._empdaGarageScale
-                                        elseif drawMethod == "drawTextureScaled" then
-                                            args[2] = args[2] * self._empdaGarageScale
-                                            args[3] = args[3] * self._empdaGarageScale
-                                            args[4] = args[4] * self._empdaGarageScale
-                                            args[5] = args[5] * self._empdaGarageScale
-                                        else
-                                            args[2] = args[2] * self._empdaGarageScale
-                                            args[3] = args[3] * self._empdaGarageScale
-                                        end
-                                        return originalDraw(self, unpack(args, 1, args.n))
-                                    end
-                                end
-                            end
-                        end
-                    end
-                    local key = tostring(docked) .. ":" .. tostring(rect and rect.w) .. ":" .. tostring(rect and rect.h)
-                        .. ":" .. tostring(pdaLanguageCode())
-                    if owner._empdaPageSize ~= key then
-                        owner._empdaPageSize, owner.lastLayoutKey, owner.textLayoutKey = key, nil, nil
-                    end
-                    local result = pack(pcall(original, owner, ...))
-                    state.viewportPanel = previous
-                    if not result[1] then error(result[2]) end
-                    if owner.closeButton then owner.closeButton:setVisible(not docked) end
-                    if docked and owner.clearISButtonB then owner:clearISButtonB() end
-                    if owner.questTab then
-                        owner.questTab:setVisible(not docked and owner.readOnlyRaid ~= true)
-                        owner.barterTab:setVisible(not docked and owner.readOnlyRaid ~= true)
-                        if docked and owner.readOnlyRaid ~= true then
-                            for _, list in ipairs({owner.questList, owner.barterList}) do
-                                local gained = list.y - owner.questTab.y
-                                list:setY(owner.questTab.y)
-                                list:setHeight(list.height + gained)
-                                list:setScrollHeight(math.max(list.height, list:getScrollHeight()))
-                                if list.vscroll then list.vscroll:setHeight(list.height) end
-                            end
-                        end
-                        if docked and owner._empdaFocusQuest then
-                            local y = 0
-                            for _, definition in ipairs(owner:acquiredDefinitions()) do
-                                if definition.id == owner._empdaFocusQuest then
-                                    local maximum = math.max(0, owner.questList:getScrollHeight() - owner.questList.height)
-                                    owner.questList:setYScroll(-math.min(y, maximum))
-                                    break
-                                end
-                                y = y + owner:rowHeight(definition)
-                            end
-                            owner._empdaFocusQuest = nil
-                        end
-                    end
-                    return unpack(result, 2, result.n)
-                end
-            end
-        end
-    end
+    if panel then state.instances[route.name] = panel end
     return panel
 end
 
@@ -530,6 +417,7 @@ local function invoke(routeName, args)
             "Existing Extraction Mode permissions kept " .. routeName .. " in its native UI")
         return original(unpackArgs(args))
     end
+    if mainPages[routeName] and playerNumber(route, args) ~= 0 then return original(unpackArgs(args)) end
     local pda = state.pda
     local ui = state.ui
     local instance = pdaFor(route, args, pda, ui)
@@ -538,7 +426,10 @@ local function invoke(routeName, args)
             "PDA unavailable for " .. routeName .. "; opening its native UI")
         return original(unpackArgs(args))
     end
-    if routeName == "openControllerPanel" then return navigate("home") end
+    if mainPages[routeName] then
+        navigate(mainPages[routeName])
+        return instance
+    end
     if instance._pda and instance._pda.phase == "ready" then
         diagnostic("route-docked:" .. routeName, routeName .. " opened through the PDA")
         return runOriginal(route, original, args, pda, ui)
@@ -554,34 +445,18 @@ navigate = function(page, questId)
     local data, config = stateFor(0), ExtractionMode.Config
     if page == "barter" and (data.state == config.STATE_RAID or data.state == config.STATE_EXTRACTING
         or data.state == config.STATE_BOARDING) then return end
-    local top = ui._pdaTop
-    if (page == "quests" or page == "barter") and top and top == ExtractionMode.QuestPanelInstance then
-        state.section = page
-        top.activeTab = page == "barter" and "barter" or "quests"
-        if questId then top.expandedQuestId, top._empdaFocusQuest = questId, questId end
-        top:applyTabState()
-        top:layoutRows(false)
-        if page == "barter" then top:layoutBarterRows(true) end
-        return
-    end
     for _ = 1, #routes do
-        top = ui._pdaTop
+        local top = ui._pdaTop
         local info = top and pda._docked[top]
         if not (info and info.entry._extractionModePDA) then break end
         top.returnToController = false
         pda.Back(ui)
     end
     pda.Tab, state.section = "extraction", page
-    ui._empdaExtractionScroll = 0
-    if page == "home" then return end
-    state.requestedQuest = questId
-    local route = page == "upgrades" and "openUpgradePanel"
-        or (page == "quests" or page == "barter") and "openQuestPanel" or "openGaragePanel"
-    if page == "garage" and playerFor(0) and ExtractionMode.Client then
-        ExtractionMode.Client.sendCommand(playerFor(0), "RequestState", {})
-    end
-    local args = page == "garage" and pack(playerFor(0), true) or pack(0, false)
-    return invoke(route, args)
+    ui._empdaExtractionScroll, ui._empdaExtractionContentH = 0, 0
+    ui._empdaExtractionViewport, ui._empdaExtractionPressed = nil, nil
+    if page == "home" then state.dashboard.pages.close()
+    else state.dashboard.pages.enter(ui, page, questId) end
 end
 
 local function installRoute(route)
@@ -601,8 +476,6 @@ local function dockEntry(route)
         key = route.title,
         fallback = route.fallback,
         icon = route.icon,
-        fill = route.name == "openUpgradePanel" or route.name == "openQuestPanel"
-            or route.name == "openGaragePanel",
         _extractionModePDA = route.name,
     }
 end
@@ -611,7 +484,7 @@ local function installRoutes()
     local count = 0
     for _, route in ipairs(routes) do
         installRoute(route)
-        if state.originals[route.name] and not state.wrapped[route.name] then
+        if state.originals[route.name] and not mainPages[route.name] and not state.wrapped[route.name] then
             local entry = dockEntry(route)
             local found = false
             for _, existing in ipairs(state.pda.DOCK) do
@@ -779,15 +652,16 @@ local function installPageHooks(ui, pda)
             else
                 diagnostic("tab-missing", "PDA could not add the Extraction tab to its navigation")
             end
-            if pda.Tab == "extraction" then
-                local info = owner._pdaTop and pda._docked[owner._pdaTop]
-                if not pda.DockActive(owner) or (info and mainPages[info.entry._extractionModePDA]) then
-                    local page = pda.DockActive(owner) and state.section or "home"
-                    local top = state.dashboard.navigation(owner, pda, page)
-                    if page == "home" then state.dashboard.render(owner, pda, top) end
-                else
-                    owner._empdaExtractionHits = {}
-                end
+            if pda.Tab == "extraction" and not pda.DockActive(owner)
+                and owner._pda and owner._pda.phase == "ready" then
+                local page = state.section or "home"
+                local top = state.dashboard.navigation(owner, pda, page)
+                if page == "home" then state.dashboard.render(owner, pda, top)
+                else state.dashboard.pages.render(owner, pda, top, page) end
+            else
+                state.dashboard.pages.close()
+                owner._empdaExtractionHits = {}
+                owner._empdaExtractionViewport = nil
             end
             if syncDockedPanels then syncDockedPanels(owner) end
             return unpackArgs(result)
@@ -846,8 +720,9 @@ local function installPageHooks(ui, pda)
                 local rect = owner._empdaExtractionViewport
                 local x, y = getMouseX() - owner:getAbsoluteX(), getMouseY() - owner:getAbsoluteY()
                 if isInside(x, y, rect) then
+                    if state.dashboard.pages.wheel(owner, x, y, delta) then return true end
                     local maximum = math.max(0, (owner._empdaExtractionContentH or 0) - rect.h)
-                    owner._empdaExtractionScroll = math.max(0, math.min(maximum, (owner._empdaExtractionScroll or 0) - delta * 42))
+                    owner._empdaExtractionScroll = math.max(0, math.min(maximum, (owner._empdaExtractionScroll or 0) + delta * 42))
                     return true
                 end
             end
@@ -860,105 +735,20 @@ local function installPageHooks(ui, pda)
 end
 
 local function installDockSkin(pda)
-    local originalViewport = ExtractionMode.TextLayout.viewport
-    -- Only the docked panel's layout uses PDA dimensions; other native menus keep their viewport.
-    ExtractionMode.TextLayout.viewport = function(playerNum, ...)
-        local panel = state.viewportPanel
-        if panel and panel._pdaDock and panel.playerNum == playerNum and state.ui.instance then
-            local rect = pda.DockRect(state.ui.instance)
-            return rect.w, rect.h
-        end
-        return originalViewport(playerNum, ...)
-    end
-    local originalRect, originalScreen = pda.DockRect, pda.DrawScreen
-    local function extractionMainPageActive()
-        local ui = state.ui and state.ui.instance
-        local info = ui and ui._pdaTop and pda._docked[ui._pdaTop]
-        return info and mainPages[info.entry._extractionModePDA] ~= nil or false
-    end
-    local function installNeatUIHook()
-        if state.neatUIHook then return end
-        local ok, neatUI = pcall(require, "ViewpointExtractionSupport/NeatUI")
-        if not ok or type(neatUI) ~= "table" or type(neatUI.sync) ~= "function" then return end
-        local originalSync = neatUI.sync
-        local requested = true
-        if type(neatUI.isRequested) == "function" then requested = neatUI.isRequested() end
-        if state.neatOption == nil then
-            state.neatOption = { getValue = function() return requested end }
-        end
-        local disabledOption = { getValue = function() return false end }
-        state.neatUIHook = function(option)
-            if option ~= nil then
-                if type(option) == "boolean" then
-                    local enabled = option
-                    state.neatOption = { getValue = function() return enabled end }
-                else
-                    state.neatOption = option
-                end
-            end
-            return originalSync(extractionMainPageActive() and disabledOption or state.neatOption)
-        end
-        neatUI.sync = state.neatUIHook
-    end
-    local function closeExtractionPages()
-        for _, route in ipairs(routes) do
-            if mainPages[route.name] then
-                local panel = resolvedPanel(route)
-                if panel and panel._pdaDock then
-                    local closed = false
-                    for _, method in ipairs({ "onCloseX", "close", "onClose" }) do
-                        local callback = panel[method]
-                        local inherited = method == "close"
-                            and ((ISPanel and callback == ISPanel.close)
-                                or (ISCollapsableWindow and callback == ISCollapsableWindow.close))
-                        if not closed and type(callback) == "function" and not inherited then
-                            closed = pcall(callback, panel)
-                        end
-                    end
-                    pcall(function() panel:setVisible(false) end)
-                    if panel.removeFromUIManager then pcall(panel.removeFromUIManager, panel) end
-                    if route.name == "openUpgradePanel" then ExtractionMode.UpgradePanelInstance = nil
-                    elseif route.name == "openQuestPanel" then ExtractionMode.QuestPanelInstance = nil
-                    elseif route.name == "openGaragePanel" then ExtractionMode.GaragePanelInstance = nil end
-                end
-            end
-        end
-    end
     if type(pda.Undock) == "function" and pda.Undock ~= state.undockWrapper then
         local originalUndock = pda.Undock
         state.undockWrapper = function(ui, ...)
-            closeExtractionPages()
+            state.dashboard.pages.close()
+            state.section = "home"
+            if ui then ui._empdaExtractionScroll = 0 end
             return originalUndock(ui, ...)
         end
         pda.Undock = state.undockWrapper
-    end
-    local function mainPage(ui)
-        local info = ui and ui._pdaTop and pda._docked[ui._pdaTop]
-        return info and mainPages[info.entry._extractionModePDA] ~= nil
-    end
-    pda.DockRect = function(ui)
-        local rect = originalRect(ui)
-        if mainPage(ui) then
-            local top = state.dashboard.bodyTop()
-            rect.h, rect.y = rect.h - (top - rect.y), top
-        end
-        return rect
-    end
-    pda.DrawScreen = function(ui, ...)
-        if not mainPage(ui) then return originalScreen(ui, ...) end
-        ui._backRect = nil
-        local rect = pda.DockRect(ui)
-        pda.Panel(ui, rect.x, rect.y, rect.w, rect.h, pda.P.edge)
     end
     local oldDockTick = pda.DockTick
     pda.DockTick = function(ui, ...)
         local active = oldDockTick(ui, ...)
         for _, window in ipairs(active or {}) do styleWindow(window, pda.P) end
-        installNeatUIHook()
-        if state.neatUIHook and state.neatDocked ~= extractionMainPageActive() then
-            state.neatDocked = extractionMainPageActive()
-            state.neatUIHook(state.neatOption)
-        end
         return active
     end
 end
@@ -988,15 +778,6 @@ syncDockedPanels = function(liveInstance)
         end
     end
 
-    local active = instance._pdaDocked or {}
-    if #visiblePanels == 0 and pda.Tab == "extraction" then
-        local now = getTimestampMs and getTimestampMs() or 0
-        if now >= (state.nextDockProbe or 0) then
-            state.nextDockProbe = now + 5000
-            print("[Extraction Mode PDA] Dock probe found no visible registered Extraction Mode panels; active PDA pages="
-                .. tostring(#(active or {})))
-        end
-    end
     for _, entry in ipairs(visiblePanels) do
         if entry.panel._pdaDock then
             diagnostic("panel-docked:" .. entry.route.name,
@@ -1026,7 +807,9 @@ local function hookReady(pda, ui)
         return "required ProjectRPGExpanded navigation methods are missing"
     end
     local layout = ExtractionMode and ExtractionMode.TextLayout
-    if not layout or type(layout.viewport) ~= "function" then return "Extraction Mode text layout is unavailable" end
+    if not layout or type(layout.flow) ~= "function" then return "Extraction Mode text layout is unavailable" end
+    if not (ExtractionMode.Client and ExtractionMode.Quests and ExtractionMode.Barters and ExtractionMode.Upgrades
+        and ExtractionMode.Generator) then return "Extraction Mode page data is unavailable" end
     return nil
 end
 
@@ -1360,6 +1143,16 @@ function Integration.install()
     state.dashboard = Dashboard.new({text = dashboardText, state = stateFor, town = townName,
         admin = adminControlsVisible, navigate = navigate,
         open = function(name) return invoke(name, pack(0)) end})
+    local receive = state.dashboard.pages.receive
+    if Events and Events.OnServerCommand then Events.OnServerCommand.Add(receive) end
+    local client = ExtractionMode.Client
+    if client and type(client.receiveServerCommand) == "function" then
+        local originalReceive = client.receiveServerCommand
+        client.receiveServerCommand = function(...)
+            receive(...)
+            return originalReceive(...)
+        end
+    end
     if not installPageHooks(ui, pda) then
         state.failure = "could not hook the PDA render and input methods"
         return false
@@ -1390,6 +1183,7 @@ local function tick()
     else
         installPageHooks(state.ui, state.pda)
         syncDockedPanels()
+        if not (state.ui.instance and state.ui.instance._pda) then state.dashboard.pages.close() end
     end
 
     local ui, pda = state.ui, state.pda
