@@ -29,5 +29,5 @@ This addon is independent of Viewpoint Extraction Support. If the installed PDA 
 
 Workshop ID: 3831366933
 Mod ID: ExtractionModePDA"
-	"changenote" "0.1.6: Rebuilds upgrades, missions, barter and garage as PDA-native pages; restores the original garage layout and brings back barter item icons and normal scroll direction."
+	"changenote" "0.1.7: Fixes PDA garage 3D previews with Immersive Snow by showing models while snow parts are empty and switching to the native illustration when snow models load."
 }

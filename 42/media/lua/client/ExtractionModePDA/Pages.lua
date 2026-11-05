@@ -429,6 +429,7 @@ function Pages.new(context, widgets)
                 hit = function(...) return widgets.hit(ui, ...) end,
             }, data)
             widgets.endBody(ui, pda, body, bottom)
+            GaragePage.drawModel(ui)
             return
         end
         local pad, y = 16, body.y
