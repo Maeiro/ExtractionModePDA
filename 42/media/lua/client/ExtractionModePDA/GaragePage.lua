@@ -53,33 +53,6 @@ local function color(rgb)
     return {r = rgb[1], g = rgb[2], b = rgb[3], a = 1}
 end
 
-local function tryEmptySnowPreview(scene, script, scriptName)
-    if not script or not script:getPartById("ISnowShell")
-        or (scene.extractionFailedScripts and scene.extractionFailedScripts[scriptName]) then return end
-
-    local parts = {}
-    for index = 0, script:getPartCount() - 1 do
-        local part = script:getPart(index)
-        local id = tostring(part:getId() or "")
-        if id:sub(1, 6) == "GSVU4_" then return end
-        if id == "ISnowShell" or id:sub(1, 10) == "ISnowWheel" or id:sub(1, 9) == "ISnowPart" then
-            if part:getModelCount() > 0 then return end
-            parts[#parts + 1] = part
-        end
-    end
-
-    local ok = pcall(function()
-        scene.javaObject:fromLua2("setObjectVisible", "garageVehicle", false)
-        scene.javaObject:fromLua2("setVehicleScript", "garageVehicle", scriptName)
-        scene.javaObject:fromLua2("setObjectVisible", "garageVehicle", true)
-    end)
-    if ok then
-        scene._empdaSnowParts = parts
-        scene.extractionRender3D = true
-        print("[Extraction Mode PDA] Garage preview for " .. scriptName .. ": 3D (empty Immersive Snow parts)")
-    end
-end
-
 local function preview(page, record, x, y, width, height)
     local ui, api = page.ui, ExtractionMode.GaragePreview
     if not fullyVisible(page, y, height) or not api or not ISUI3DScene then return end
@@ -105,28 +78,9 @@ local function preview(page, record, x, y, width, height)
     local scriptName = tostring(record.scriptName or "")
     if scene.extractionScriptName ~= scriptName then
         api.show(scene, record)
-        scene._empdaSnowParts = nil
-        if not scene.extractionRender3D then
-            local script = getScriptManager():getVehicle(scriptName)
-            tryEmptySnowPreview(scene, script, scriptName)
-            if not scene.extractionRender3D then
-                local result = scene.extractionIllustration and "2D illustration" or "unavailable"
-                local reason = script and script:getPartById("ISnowShell") and " (Immersive Snow parts)" or ""
-                print("[Extraction Mode PDA] Native garage preview for " .. scriptName .. ": " .. result .. reason)
-            end
-        end
-    end
-    if scene.extractionRender3D and scene._empdaSnowParts then
-        -- Immersive Snow populates these parts lazily, even after selection.
-        for _, part in ipairs(scene._empdaSnowParts) do
-            if part:getModelCount() > 0 then
-                scene.extractionRender3D = false
-                scene.mouseDown = false
-                scene._empdaSnowParts = nil
-                print("[Extraction Mode PDA] Garage preview for " .. scriptName .. ": 2D (snow models loaded)")
-                break
-            end
-        end
+        local result = scene.extractionRender3D and "3D model"
+            or scene.extractionIllustration and "2D illustration" or "unavailable"
+        print("[Extraction Mode PDA] Native garage preview for " .. scriptName .. ": " .. result)
     end
     place(scene, x, y, width, height)
     place(surface, x, y, width, height)

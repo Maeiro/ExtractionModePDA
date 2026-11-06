@@ -20,7 +20,8 @@ Adds Extraction Mode screens to the ProjectRPGExpanded Survivor PDA.
 [*]Uses the PDA's own language setting, with English and Brazilian Portuguese text.
 [*]Hides the native Extraction Mode interface while its PDA interface is active.
 [*]Closes integrated pages with the PDA and applies the PDA theme throughout.
-[*]Hides the ProjectRPGExpanded player portrait while the world map is open to prevent map icon rendering issues, and keeps the player card behind Ergonomic UI.[/list]
+[*]Hides the ProjectRPGExpanded player portrait while the world map is open to prevent map icon rendering issues, and keeps the player card behind Ergonomic UI.
+[*]In single-player with the Viewpoint beta, direct UI rendering keeps the open PDA updating with each game frame.[/list]
 [h2]Requirements[/h2]
 [list][*]Project Zomboid Build 42.21 or newer
 [*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3785397275]Extraction Mode[/url]
@@ -29,5 +30,5 @@ This addon is independent of Viewpoint Extraction Support. If the installed PDA 
 
 Workshop ID: 3831366933
 Mod ID: ExtractionModePDA"
-	"changenote" "0.1.7: Fixes PDA garage 3D previews with Immersive Snow by showing models while snow parts are empty and switching to the native illustration when snow models load."
+		"changenote" "0.1.8: Improves PDA frame rate with the Viewpoint beta in single-player by using direct UI rendering while the PDA is open. Native garage 3D previews and illustration fallback are preserved."
 }

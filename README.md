@@ -15,7 +15,7 @@ The integration is independent of Viewpoint Extraction Support. Install this mod
 ## Features
 
 - Adds an Extraction tab and makes it available as the PDA's initial screen.
-- Provides dedicated PDA pages for the overview, upgrades, missions, barter, and garage, with a shared layout and scrolling. The Garage page follows the original two-column layout, with saved vehicles and trailers beside the preview and controls. Vehicle previews use 3D when compatible, including while Immersive Snow models load.
+- Provides dedicated PDA pages for the overview, upgrades, missions, barter, and garage, with a shared layout and scrolling. The Garage page follows the original two-column layout, with saved vehicles and trailers beside the preview and controls. Vehicle previews use Extraction Mode's native 3D model when compatible, with its illustration fallback otherwise.
 - Routes deployment, invitations, and administrative and debug tools through the PDA's window docking.
 - Provides a dashboard with destination selection, raid readiness, hideout generator controls, and a mission summary.
 - Shows a contextual board button in Operation Status while Extraction Mode makes boarding available, using its native action.
@@ -24,6 +24,7 @@ The integration is independent of Viewpoint Extraction Support. Install this mod
 - Adds a Zombies category to ProjectRPGExpanded's server settings with per-stage Custom World Danger controls for zombie behavior, perception, infection, and respawn rules.
 - Uses the PDA's internal language selection for English and Brazilian Portuguese text.
 - Keeps Extraction Mode's native HUD hidden while its interface is active in the PDA, hides the ProjectRPGExpanded player portrait while the world map is open to prevent map icon rendering issues, and keeps the player card behind Ergonomic UI.
+- In single-player with the Viewpoint beta, the open PDA uses direct UI rendering so it can update with each game frame. Viewpoint's extra frames resume when the PDA closes.
 
 ## Local installation
 

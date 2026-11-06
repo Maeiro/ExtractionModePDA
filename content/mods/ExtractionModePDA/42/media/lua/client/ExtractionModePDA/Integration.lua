@@ -144,6 +144,42 @@ local function diagnostic(key, message)
     print("[Extraction Mode PDA] " .. message)
 end
 
+local directUICore
+
+local function restoreUIRendering()
+    if not directUICore then return end
+    if not directUICore:getOptionUIFBO() then directUICore:setOptionUIFBO(true) end
+    directUICore = nil
+end
+
+local function updateUIRendering()
+    local instance = state.installed and state.ui.instance
+    local menu = MainScreen and MainScreen.instance
+    local view = Viewpoint and Viewpoint.FrameCaps and Viewpoint.View
+    if not (instance and instance._pda and instance:getIsVisible() and view and view.next)
+        or (menu and menu:getIsVisible()) or (isClient and isClient())
+        or (isServer and isServer()) or (isMultiplayer and isMultiplayer())
+        or (getNumActivePlayers and getNumActivePlayers() > 1) then
+        restoreUIRendering()
+        return
+    end
+
+    local nextView = view.next()
+    if nextView ~= "third" and nextView ~= "isometric" then
+        restoreUIRendering()
+        return
+    end
+
+    if directUICore then return end
+    local core = getCore and getCore()
+    if not (core and core.getOptionUIFBO and core.setOptionUIFBO and core:getOptionUIFBO()) then return end
+
+    -- Viewpoint reuses the offscreen UI between game frames. Switch before drawing starts.
+    core:setOptionUIFBO(false)
+    directUICore = core
+    diagnostic("viewpoint-direct-ui", "Using direct UI rendering while the PDA is open in Viewpoint")
+end
+
 local syncDockedPanels
 
 local function pack(...)
@@ -1206,5 +1242,7 @@ end
 
 if Events and Events.OnGameStart then Events.OnGameStart.Add(Integration.install) end
 if Events and Events.OnTick then Events.OnTick.Add(tick) end
+if Events and Events.OnTickEvenPaused then Events.OnTickEvenPaused.Add(updateUIRendering) end
+if Events and Events.OnMainMenuEnter then Events.OnMainMenuEnter.Add(restoreUIRendering) end
 
 return Integration
