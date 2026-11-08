@@ -100,7 +100,17 @@ end
 function GaragePage.drawModel(ui)
     local scene, surface = ui._empdaGarageScene, ui._empdaGarageSurface
     if not surface or not surface:getIsVisible() then return end
-    surface:drawModel()
+    local ok = pcall(surface.drawModel, surface)
+    if not ok then
+        scene.extractionRender3D = false
+        scene.extractionPreviewUnavailable = true
+        surface:setVisible(false)
+        if not scene.extractionRenderFailureLogged then
+            scene.extractionRenderFailureLogged = true
+            print("[Extraction Mode PDA] Native garage 3D preview failed; showing fallback.")
+        end
+        return
+    end
     if not scene.extractionRender3D then surface:setVisible(false) end
 end
 

@@ -30,5 +30,5 @@ This addon is independent of Viewpoint Extraction Support. If the installed PDA 
 
 Workshop ID: 3831366933
 Mod ID: ExtractionModePDA"
-		"changenote" "0.1.8: Improves PDA frame rate with the Viewpoint beta in single-player by using direct UI rendering while the PDA is open. Native garage 3D previews and illustration fallback are preserved."
+		"changenote" "0.1.9: Catches native 3D vehicle preview failures in the PDA garage and falls back to the available illustration or an unavailable message."
 }
