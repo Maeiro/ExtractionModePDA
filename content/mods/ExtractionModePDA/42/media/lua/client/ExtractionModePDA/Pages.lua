@@ -1,5 +1,6 @@
 local Tracking = require "ExtractionModePDA/QuestTracking"
 local GaragePage = require "ExtractionModePDA/GaragePage"
+local BarterPage = require "ExtractionModePDA/BarterPage"
 local Icons = require "ExtractionModePDA/ItemIcons"
 local ServiceSelector = require "ExtractionModePDA/ServiceSelector"
 local Pages = {}
@@ -315,23 +316,14 @@ function Pages.new(context, widgets)
         end
         if #definitions == 0 then page.card(text("NoBarters", "No trades unlocked.")); return end
         local counts = countsFor(definitions, "offered", api.requirementCounts, data)
-        local contacts = {}
         for _, def in ipairs(definitions) do
-            local contact = def.contactId
-            if not contacts[contact] then
-                contacts[contact] = true
-                local trust = (data.contactTrust or {})[contact] or 0
-                page.card(ExtractionMode.Quests.contactDisplayName(contact), function(flow)
-                    flow:add(modeText("CurrentTrustSuffix", "Current Trust: %1", tostring(trust)))
-                end)
-            end
             local id = def.id
             local title, actions = {}, {}
-            local options, selected, option = (pageState.serviceOptions or {})[id] or {}, 0, nil
+            local options, option = (pageState.serviceOptions or {})[id] or {}, nil
             if def.service then
                 title[1] = api.serviceName(def, data.contactTrust)
-                for index, candidate in ipairs(options) do
-                    if pageState.serviceTarget[id] == candidate.id then selected, option = index, candidate; break end
+                for _, candidate in ipairs(options) do
+                    if pageState.serviceTarget[id] == candidate.id then option = candidate; break end
                 end
             else
                 for _, item in ipairs(def.received or {}) do title[#title + 1] = (item.amount or 1) .. "x " .. api.label(item) end
@@ -340,7 +332,7 @@ function Pages.new(context, widgets)
             for index, item in ipairs(def.offered or {}) do
                 affordable = affordable and (counts[id][index] or 0) >= (tonumber(item.amount) or 0)
             end
-            actions[#actions + 1] = action(modeText("Trade", "TRADE"), function()
+            actions[#actions + 1] = action(def.service and text("RequestService", "REQUEST SERVICE") or modeText("Trade", "TRADE"), function()
                 if not inside(current()) or not api.isUnlocked(current().contactTrust, def) then return end
                 if option then
                     local valid
@@ -354,16 +346,16 @@ function Pages.new(context, widgets)
                 invalidate()
             end, affordable and (not def.service or option ~= nil and option.canUse ~= false))
             page.card(table.concat(title, " + "), function(flow)
+                flow:add(text("YouGive", "You give"))
                 requirements(flow, def.offered, counts[id], api.label)
                 if def.service then
                     local nextTrust = api.serviceNextTrust(def, data.contactTrust)
                     flow:add(nextTrust and modeText("ServiceNextTrust", "Upgrades at %1 Trust", tostring(nextTrust))
                         or modeText("ServiceMaximum", "Maximum Reached"))
                     if option then
-                        flow:add(selected .. "/" .. #options .. "  " .. localization.serviceLabel(option.label, def.service))
                         if option.preview then flow:add(localization.text(option.preview, "service")) end
-                    else
-                        flow:add(localization.text(#options > 0 and "Select a target..." or "No eligible targets available", "service"))
+                    elseif #options == 0 then
+                        flow:add(localization.text("No eligible targets available", "service"))
                     end
                 end
             end, actions, barterTexture(def), def.service and {id = id, selected = pageState.serviceTarget[id],
@@ -377,7 +369,7 @@ function Pages.new(context, widgets)
             supplyPlayer, heartbeat = nil, nil
             ExtractionMode.Client.sendCommand(owner, "SetUpgradePanelOpen", {open = false})
         end
-        if liveUI then ServiceSelector.clear(liveUI) end
+        if liveUI then ServiceSelector.clear(liveUI); BarterPage.hide(liveUI) end
         if liveUI and livePage == "garage" then GaragePage.hide(liveUI) end
         liveUI, livePage, pageState = nil, nil, nil
     end
@@ -420,35 +412,12 @@ function Pages.new(context, widgets)
         view.update(ui, section)
         if not pageState then return end
         local data = current()
-        if section == "barter" and not reference(data) then
-            local tabs, seen = {}, {}
-            local definitions = ExtractionMode.Barters.unlockedDefinitions(data.contactTrust)
-            local selectedExists = false
-            for _, definition in ipairs(definitions) do
-                if definition.contactId == pageState.contact then selectedExists = true end
-            end
-            if not selectedExists then
-                pageState.contact = definitions[1] and definitions[1].contactId
-                ui._empdaExtractionScroll = 0
-            end
-            for _, definition in ipairs(definitions) do
-                local contact = definition.contactId
-                if not seen[contact] then
-                    seen[contact] = true
-                    tabs[#tabs + 1] = action(ExtractionMode.Quests.contactDisplayName(contact), function()
-                        ServiceSelector.clear(ui)
-                        pageState.contact = contact
-                        ui._empdaExtractionScroll = 0
-                        invalidate()
-                    end, true, contact == pageState.contact)
-                end
-            end
-            local row = widgets.actions(tabs, ui.width - 36)
-            local before = #ui._empdaExtractionHits
-            widgets.drawActions(ui, pda, row, 18, top)
-            for index = before + 1, #ui._empdaExtractionHits do ui._empdaExtractionHits[index].navigation = true end
-            top = top + row.height + 12
+        if section == "barter" and data.state and not reference(data) then
+            BarterPage.render({ui = ui, pda = pda, state = pageState, widgets = widgets, text = text,
+                top = top, build = barter}, data)
+            return
         end
+        if section == "barter" then BarterPage.hide(ui) end
         local body = widgets.beginBody(ui, top)
         if section == "garage" and not data.state then GaragePage.hide(ui) end
         if section == "garage" and data.state then

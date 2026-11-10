@@ -16,7 +16,8 @@ The integration is independent of Viewpoint Extraction Support. Install this mod
 
 - Adds an Extraction tab and makes it available as the PDA's initial screen.
 - Provides dedicated PDA pages for the overview, upgrades, missions, barter, and garage, with a shared layout and scrolling. Upgrade and mission requirements show item icons and skill book volumes; mission rewards show item icons too.
-- Organizes barter offers into trader tabs and replaces ambiguous repair-service controls with named target selectors.
+- Organizes barter contacts in a sidebar with a fixed profile and animated 3D portrait, using the PDA's native portrait renderer. Offers appear in a responsive card grid with item/service filters and named service target selectors. Smaller PDA windows use contact tabs to keep every contact accessible.
+- Gives Extraction Mode contacts distinct appearances made from vanilla clothing. Portraits appear only in the interface; they do not spawn NPCs or change the world.
 - Keeps the original two-column Garage layout, with saved vehicles and trailers beside the preview and controls. Vehicle previews use Extraction Mode's native 3D model when compatible, with its illustration fallback otherwise.
 - Routes deployment, invitations, and administrative and debug tools through the PDA's window docking.
 - Provides a dashboard with destination selection, raid readiness, hideout generator controls, and a mission summary.
@@ -42,7 +43,7 @@ The source repository's integration specifications use Python with `lupa`'s Lua 
 python tests/run.py --extraction-root <ExtractionMode>
 ```
 
-The upgrade and mission requirement lists show item icons and the appropriate skill book volume. Barter contacts have fixed tabs, and service targets use a named dropdown with the current preview and the original server quote validation. Page scrolling uses a larger step.
+The upgrade and mission requirement lists show item icons and the appropriate skill book volume. Barter contacts have a fixed sidebar or compact tabs, and service targets use a named dropdown with the current preview and the original server quote validation. Page scrolling uses a larger step.
 
 The optional ZombieBuddy 2.3.4+ Java helper protects only PDA garage preview scenes. Animated parts wait until their skin transforms are available, then rejoin the native 3D preview. Vehicle scripts and world vehicle models are never changed. Without the helper, unsafe animated models retain the mechanics illustration fallback. Extraction Mode still controls its own Snow/Gore illustration rules and fallback for native failures.
 

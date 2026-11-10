@@ -239,8 +239,9 @@ function Dashboard.new(context)
         return choice.deathBlocked == true or (choice.locationRefresh and choice.locationRefresh.blocked and not choice.activeRaidKey)
             or (choice.vehiclesBlocked == true and data.playerInVehicle == true)
     end
-    local function beginBody(ui, top)
-        local left, width, bottom = 18, ui.width - 36, ui.height - 18
+    local function beginBody(ui, top, left, width)
+        left, width = left or 18, width or ui.width - 36
+        local bottom = ui.height - 18
         local height = math.max(1, bottom - top)
         local scroll = math.max(0, math.min(ui._empdaExtractionScroll or 0,
             math.max(0, (ui._empdaExtractionContentH or 0) - height)))

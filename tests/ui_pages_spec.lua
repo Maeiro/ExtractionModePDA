@@ -37,6 +37,8 @@ local function counts(_, entries) local c = {}; for i in ipairs(entries) do c[i]
 local trades = {
     {id = "heal", contactId = "doctor", service = "wound", offered = {{label = "Money", amount = 20, types = {"Base.Money"}}}},
     {id = "tools", contactId = "mechanic", offered = {}, received = {{label = "Wrench", fullType = "Base.Wrench"}}},
+    {id = "alcohol", contactId = "doctor", offered = {{label = "Bleach", amount = 1, types = {"Base.Bleach"}}},
+        received = {{label = "Alcohol", fullType = "Base.Disinfectant"}}},
 }
 ExtractionMode.Barters = {unlockedDefinitions = function() return trades end, requirementCounts = counts, label = label,
     serviceName = function() return "Minor treatment" end, serviceNextTrust = function() return 40 end,
@@ -59,7 +61,9 @@ local ui = {width = 900, height = 1100, _empdaExtractionHits = {}, children = {}
 function ui:addChild(child) self.children[child] = true end
 function ui:removeChild(child) self.children[child] = nil end
 function ui:drawTextureScaledAspect() end
-local palette = {panel = {0,0,0}, edge = {1,1,1}}
+function ui:setStencilRect() end
+function ui:drawTextCentre() end
+local palette = {panel = {0,0,0}, edge = {1,1,1}, text = {1,1,1}, muted = {0.5,0.5,0.5}}
 local widgets = {player = function() return player end, allowed = function() return true end,
     inside = function(d) return d.state == "HIDEOUT" end,
     send = function(command, args) sent[#sent + 1] = {command, args} end,
@@ -73,7 +77,7 @@ local widgets = {player = function() return player end, allowed = function() ret
         for _, item in ipairs(row.items) do buttons[#buttons + 1] = item end
     end,
     button = function(_, _, _, _, _, text, callback, enabled) buttons[#buttons + 1] = {label=text,action=callback,enabled=enabled} end,
-    beginBody = function(_, top) return {x = 18,w = 864,y = top,top = top,bottom = 1100,h = 1100-top} end,
+    beginBody = function(_, top, left, width) return {x = left or 18,w = width or 864,y = top,top = top,bottom = 1100,h = 1100-top} end,
     endBody = function() end}
 local Pages = require "ExtractionModePDA/Pages"
 local view = Pages.new({text = function(_, fallback) return fallback end, state = function() return data end}, widgets)
@@ -102,6 +106,7 @@ render("quests")
 assert(hasIcon("Base.TinnedBeans") and hasIcon("Base.BookMetalWelding2"), "mission requirements must show item and matching skill-volume icons")
 render("barter")
 assert(not table.concat(titles,"|"):find("Wrench"), "barter shows only the selected contact's offers")
+assert(hasIcon("Base.Money") and hasIcon("Base.Bleach"), "deferred cards retain each offer's own requirements")
 local switch
 for _, button in ipairs(buttons) do if button.label == "mechanic" then switch = button.action end end
 ui._empdaExtractionScroll = 900
@@ -117,13 +122,13 @@ assert(combo.options[2].label == "Neck - Cut", "service dropdown uses descriptiv
 combo.selected = 2; combo.onChange(nil, combo)
 render("barter")
 local stale
-for _, button in ipairs(buttons) do if button.label == "TRADE" then assert(button.enabled); stale = button.action end end
+for _, button in ipairs(buttons) do if button.label == "REQUEST SERVICE" then assert(button.enabled); stale = button.action end end
 local before = #sent
 view.receive("ExtractionMode", "BarterServices", {options={heal={{id="neck",label="Neck - Cut",quote="new",canUse=true}}}})
 stale()
 assert(#sent == before, "stale service quotes must not be submitted")
 render("barter")
-for _, button in ipairs(buttons) do if button.label == "TRADE" then button.action() end end
+for _, button in ipairs(buttons) do if button.label == "REQUEST SERVICE" then button.action() end end
 assert(sent[#sent][1] == "CompleteBarter" and sent[#sent][2].quote == "new")
 combo.expanded = true
 view.close()

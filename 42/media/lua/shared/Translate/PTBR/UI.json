@@ -185,5 +185,12 @@
   "UI_PRPGE_Config_WorldDangerS5FenceLunge": "Etapa 5: Podem avançar sobre cercas",
   "UI_PRPGE_Config_WorldDangerS5RespawnHours": "Etapa 5: Intervalo de respawn (horas)",
   "UI_PRPGE_Config_WorldDangerS5RespawnPercent": "Etapa 5: Multiplicador de respawn (%)",
-  "UI_ExtractionModePDA_SelectServiceTarget": "Selecionar um alvo..."
+  "UI_ExtractionModePDA_SelectServiceTarget": "Selecionar um alvo...",
+  "UI_ExtractionModePDA_AllOffers": "Todas as ofertas",
+  "UI_ExtractionModePDA_BarterItems": "Itens",
+  "UI_ExtractionModePDA_BarterServices": "Serviços",
+  "UI_ExtractionModePDA_NoMatchingOffers": "Nenhuma oferta nesta categoria.",
+  "UI_ExtractionModePDA_RequestService": "SOLICITAR SERVIÇO",
+  "UI_ExtractionModePDA_YouGive": "Você entrega",
+  "UI_ExtractionModePDA_YourMoney": "Seu dinheiro: %1"
 }
