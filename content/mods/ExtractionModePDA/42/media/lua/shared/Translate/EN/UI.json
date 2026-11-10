@@ -198,6 +198,6 @@
   "UI_ExtractionModePDA_NextTrustUnlock": "Next unlock at %1 Trust",
   "UI_ExtractionModePDA_BarterTrustHint": "Trust unlocks more trades and improves services.",
   "UI_ExtractionModePDA_BarterConnecting": "Connecting to %1...",
-  "UI_ExtractionModePDA_ServiceFunds": "Service funds: %1 (cash: %2 / bank: %3)",
+  "UI_ExtractionModePDA_ServiceFunds": "Available funds: %1 (cash: %2 / bank: %3)",
   "UI_ExtractionModePDA_NoServiceTargets": "No eligible targets"
 }

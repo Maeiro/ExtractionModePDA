@@ -23,6 +23,7 @@ The integration is independent of Viewpoint Extraction Support. Install this mod
 - Provides a dashboard with destination selection, raid readiness, hideout generator controls, and a mission summary.
 - Shows a contextual board button in Operation Status while Extraction Mode makes boarding available, using its native action.
 - Lets each character select an unfinished mission to track, showing its objectives and requirements on the dashboard.
+- Shows the requesting contact's emblem on mission cards and waits for the PDA's native loading animation before displaying Extraction content or accepting page input.
 - Explains that raids have no fixed end time and shows the next horde or wave timing when Extraction Mode provides it.
 - Adds a Zombies category to ProjectRPGExpanded's server settings with per-stage Custom World Danger controls for zombie behavior, perception, infection, and respawn rules.
 - Uses the PDA's internal language selection for English and Brazilian Portuguese text.
@@ -31,9 +32,11 @@ The integration is independent of Viewpoint Extraction Support. Install this mod
 
 ## Service prices and bank payments
 
-Services use the Survivor PDA trader payment flow: carried cash (including money bundles) first, then an open, enabled bank account. Item-for-item barter still requires the offered inventory items. The server checks the player's current funds, native service target and single-use quote. A changed price requires a fresh selection; a native repair failure refunds cash and bank amounts to their original sources.
+Services and any ordinary barter charging Money use the Survivor PDA trader payment flow: carried cash (including money bundles) first, then an open, enabled bank account. Trades charging both Money and materials still require all material items. Money received as a reward follows Extraction Mode's native cash delivery. The server checks current funds and materials; services also retain their native target and single-use quote validation. A changed service price requires a fresh selection; a native repair failure refunds cash and bank amounts to their original sources.
 
 In **Sandbox Options → Extraction Mode PDA - Services**, configure wound treatment, clothing repair, melee repair, firearm repair and vehicle part repair separately. Defaults match Extraction Mode: $20 for each service except clothing ($10). Prices are whole dollars from 0 to 100,000, with 0 allowing a free service. Each price applies to all native trust tiers of that service. Existing worlds use the defaults until configured.
+
+The sandbox screen also includes these options when its page list was cached before this mod's options registered. Only registered options are added; saved values remain unchanged.
 
 For dedicated servers, install and enable this mod on both the server and clients and configure the server's sandbox options. Prices and funds shown in the PDA come from the server's service snapshot; the client cannot supply the amount to charge. Restart the world/server after installing the addon or adding its sandbox definitions. If the expected PDA payment API is incompatible, supported services are refused rather than charging an incorrect price.
 

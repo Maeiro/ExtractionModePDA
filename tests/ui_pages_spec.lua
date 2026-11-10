@@ -45,11 +45,11 @@ ExtractionMode.Barters = {unlockedDefinitions = function() return trades end, re
     serviceName = function() return "Minor treatment" end, serviceNextTrust = function() return 40 end,
     isUnlocked = function() return true end}
 package.loaded["ExtractionMode/Barters"] = true
-local quest = {id = "food", contactId = "doctor", requirements = {{label = "Food", amount = 5, types = {"Base.TinnedBeans"}}},
+local quest = {id = "food", contactId = "dr_layne", requirements = {{label = "Food", amount = 5, types = {"Base.TinnedBeans"}}},
     skillRequirements = {{label = "Welding", level = 3}}, objectives = {}}
 ExtractionMode.Quests = {acquiredDefinitions = function() return {quest} end, isCompleted = function() return false end,
     contactDisplayName = function(id) return id end, name = function() return "Supplies" end,
-    description = function() return "Description" end, label = label, requirementCounts = counts,
+    description = function() return "Description" end, flavorText = function() return "Briefing" end, label = label, requirementCounts = counts,
     skillRequirementsMet = function() return true end, objectivesMet = function() return true end, skillLevel = function() return 7 end}
 local upgrade = {id = "security", requirements = {{label = "Sheet Metal", amount = 4, types = {"Base.SheetMetal"}}},
     skillRequirements = {{label = "Welding", level = 1}}}
@@ -63,7 +63,8 @@ local ui = {width = 900, height = 1100, _empdaExtractionHits = {}, children = {}
 function ui:addChild(child) self.children[child] = true end
 function ui:removeChild(child) self.children[child] = nil end
 function ui:drawTextureScaledAspect() end
-function ui:drawTextureScaled() end
+local drawnEmblems = {}
+function ui:drawTextureScaled(texture) drawnEmblems[texture] = true end
 function ui:drawRect() end
 function ui:drawRectBorder() end
 function ui:drawTextZoomed() end
@@ -116,6 +117,13 @@ render("upgrades")
 assert(hasIcon("Base.SheetMetal") and hasIcon("Base.BookMetalWelding1"), "upgrade requirements must show material and skill-book icons")
 render("quests")
 assert(hasIcon("Base.TinnedBeans") and hasIcon("Base.BookMetalWelding2"), "mission requirements must show item and matching skill-volume icons")
+assert(drawnEmblems["media/ui/ExtractionModePDA/Contact_dr_layne.png"], "mission cards show the requesting contact's emblem")
+view.enter(ui, "quests", "food")
+view.hide()
+render("quests")
+local expanded
+for _, button in ipairs(buttons) do if button.label == "Hide details" then expanded = true end end
+assert(expanded, "hiding a page during loading preserves the requested mission's expanded details")
 render("barter")
 assert(not table.concat(titles,"|"):find("Wrench"), "barter shows only the selected contact's offers")
 assert(hasIcon("Base.Money") and hasIcon("Base.Bleach"), "deferred cards retain each offer's own requirements")

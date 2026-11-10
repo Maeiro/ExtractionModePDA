@@ -198,6 +198,6 @@
   "UI_ExtractionModePDA_NextTrustUnlock": "Próximo desbloqueio com %1 de confiança",
   "UI_ExtractionModePDA_BarterTrustHint": "A confiança libera mais trocas e melhora os serviços.",
   "UI_ExtractionModePDA_BarterConnecting": "Conectando com %1...",
-  "UI_ExtractionModePDA_ServiceFunds": "Saldo para serviços: %1 (carteira: %2 / banco: %3)",
+  "UI_ExtractionModePDA_ServiceFunds": "Saldo disponível: %1 (carteira: %2 / banco: %3)",
   "UI_ExtractionModePDA_NoServiceTargets": "Nenhum alvo elegível"
 }

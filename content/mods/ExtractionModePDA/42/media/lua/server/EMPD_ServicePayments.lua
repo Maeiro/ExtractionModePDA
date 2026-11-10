@@ -27,16 +27,22 @@ barters.serviceCost = function(definition)
     return originalCost(definition)
 end
 
-barters.requirementsMet = function(player, definition)
-    local transaction = transactions[definition]
-    if transaction then return ready and traders.Money(player) >= transaction.cost end
-    if Prices.supported(definition) then return ready and traders.Money(player) >= Prices.get(definition.service) end
-    return originalMet(player, definition)
+local function materialOffer(definition)
+    if not definition or definition.service then return nil end
+    local cost, materials, hasMoney = Prices.split(definition.offered)
+    if not hasMoney then return nil end
+    local stripped = {}
+    for key, value in pairs(definition) do stripped[key] = value end
+    stripped.offered, stripped.requirements = materials, materials
+    return cost, stripped
 end
 
-barters.consumeRequirements = function(player, definition)
-    local transaction = transactions[definition]
-    if not transaction then return originalConsume(player, definition) end
+local function sync(player)
+    local ok, err = pcall(bank.Sync, player)
+    if not ok then print("[ExtractionModePDA] Bank display sync failed: " .. tostring(err)) end
+end
+
+local function charge(player, transaction)
     if transaction.charged then return false end
     local cash = currency.Value(player)
     local balance, account = bank.Spendable(player)
@@ -45,13 +51,43 @@ barters.consumeRequirements = function(player, definition)
     transaction.cash = math.max(0, cash - currency.Value(player))
     transaction.bank = account and math.max(0, balance - account.bal) or 0
     transaction.account = account
-    quotes[player] = nil
+    if transaction.service then quotes[player] = nil end
     return true
 end
 
-local function sync(player)
-    local ok, err = pcall(bank.Sync, player)
-    if not ok then print("[ExtractionModePDA] Bank display sync failed: " .. tostring(err)) end
+local function refund(player, transaction)
+    if transaction.cash > 0 then currency.Pay(player, transaction.cash) end
+    if transaction.bank > 0 then
+        local account = transaction.account
+        account.bal = account.bal + transaction.bank
+        table.insert(account.log, 1, {k = "dep", a = transaction.bank,
+            h = getGameTime():getWorldAgeHours(), x = "Extraction payment refund"})
+        while #account.log > math.max(1, historyLimit or 24) do table.remove(account.log) end
+    end
+end
+
+barters.requirementsMet = function(player, definition)
+    local transaction = transactions[definition]
+    if transaction then return ready and traders.Money(player) >= transaction.cost end
+    if Prices.supported(definition) then return ready and traders.Money(player) >= Prices.get(definition.service) end
+    local cost, materials = materialOffer(definition)
+    if cost then return ready and traders.Money(player) >= cost and originalMet(player, materials) end
+    return originalMet(player, definition)
+end
+
+barters.consumeRequirements = function(player, definition)
+    local transaction = transactions[definition]
+    if transaction then return charge(player, transaction) end
+    local cost, materials = materialOffer(definition)
+    if not cost then return originalConsume(player, definition) end
+    if not ready or traders.Money(player) < cost or not originalMet(player, materials) then return false end
+    transaction = {cost = cost}
+    if not charge(player, transaction) then return false end
+    local ok, consumed = pcall(originalConsume, player, materials)
+    if not ok or not consumed then refund(player, transaction) end
+    sync(player)
+    if not ok then error(consumed) end
+    return consumed
 end
 
 services.snapshot = function(root, player, trust)
@@ -84,21 +120,14 @@ services.complete = function(root, player, definition, trust, token)
     end
     local payable = {}
     for key, value in pairs(definition) do payable[key] = value end
-    local transaction = {cost = cost}
+    local transaction = {cost = cost, service = true}
     transactions[payable] = transaction
     -- Native completion still validates the target and applies/rolls back the service.
     -- Its cash-only payment/refund loop is replaced for this one definition instance.
     local ok, completed, message = pcall(originalComplete, root, player, payable, trust, token)
     transactions[payable] = nil
     if ok and not completed and transaction.charged then
-        if transaction.cash > 0 then currency.Pay(player, transaction.cash) end
-        if transaction.bank > 0 then
-            local account = transaction.account
-            account.bal = account.bal + transaction.bank
-            table.insert(account.log, 1, {k = "dep", a = transaction.bank,
-                h = getGameTime():getWorldAgeHours(), x = "Extraction service refund"})
-            while #account.log > math.max(1, historyLimit or 24) do table.remove(account.log) end
-        end
+        refund(player, transaction)
         message = "Service failed; the payment was refunded to its original sources."
     end
     if transaction.charged then sync(player) end

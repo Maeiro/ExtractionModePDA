@@ -678,6 +678,10 @@ local function addExtractionTab(ui, pda)
 end
 
 local function installPageHooks(ui, pda)
+    local function contentReady(owner)
+        return owner._pda and owner._pda.phase == "ready"
+            and (not pda.ContentReady or pda.ContentReady(owner))
+    end
     if ui.render ~= state.renderWrapper then
         local oldRender = ui.render
         state.renderWrapper = function(owner, ...)
@@ -689,13 +693,18 @@ local function installPageHooks(ui, pda)
                 diagnostic("tab-missing", "PDA could not add the Extraction tab to its navigation")
             end
             if pda.Tab == "extraction" and not pda.DockActive(owner)
-                and owner._pda and owner._pda.phase == "ready" then
+                and contentReady(owner) then
                 local page = state.section or "home"
                 local top = state.dashboard.navigation(owner, pda, page)
                 if page == "home" then state.dashboard.render(owner, pda, top)
                 else state.dashboard.pages.render(owner, pda, top, page) end
             else
-                state.dashboard.pages.close()
+                if pda.Tab == "extraction" and not pda.DockActive(owner)
+                    and owner._pda and owner._pda.phase == "ready" then
+                    state.dashboard.pages.hide()
+                else
+                    state.dashboard.pages.close()
+                end
                 owner._empdaExtractionHits = {}
                 owner._empdaExtractionViewport = nil
             end
@@ -720,7 +729,7 @@ local function installPageHooks(ui, pda)
                 end
                 return true
             end
-            if pda.Tab == "extraction" then
+            if pda.Tab == "extraction" and contentReady(owner) then
                 for _, rect in ipairs(owner._empdaExtractionHits or {}) do
                     if isInside(x, y, rect) then
                         owner._empdaExtractionPressed = rect
@@ -742,7 +751,7 @@ local function installPageHooks(ui, pda)
             local pressed = owner._empdaExtractionPressed
             owner._empdaExtractionPressed = nil
             if pressed then
-                if pda.Tab == "extraction" and isInside(x, y, pressed) and pressed.action then pressed.action() end
+                if pda.Tab == "extraction" and contentReady(owner) and isInside(x, y, pressed) and pressed.action then pressed.action() end
                 return true
             end
             return oldUp(owner, x, y, ...)
@@ -752,7 +761,7 @@ local function installPageHooks(ui, pda)
     if ui.onMouseWheel ~= state.wheelWrapper then
         local oldWheel = ui.onMouseWheel
         state.wheelWrapper = function(owner, delta, ...)
-            if pda.Tab == "extraction" and not pda.DockActive(owner) then
+            if pda.Tab == "extraction" and contentReady(owner) and not pda.DockActive(owner) then
                 local rect = owner._empdaExtractionViewport
                 local x, y = getMouseX() - owner:getAbsoluteX(), getMouseY() - owner:getAbsoluteY()
                 if isInside(x, y, rect) then

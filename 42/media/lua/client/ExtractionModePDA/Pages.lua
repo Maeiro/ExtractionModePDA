@@ -4,6 +4,7 @@ local BarterPage = require "ExtractionModePDA/BarterPage"
 local Icons = require "ExtractionModePDA/ItemIcons"
 local ServiceSelector = require "ExtractionModePDA/ServiceSelector"
 local Prices = require "ExtractionModePDA/ServicePrices"
+local Style = require "ExtractionModePDA/BarterStyle"
 local Pages = {}
 local serviceIcons = {
     wound = "Base.FirstAidKit", clothing = "Base.Needle",
@@ -304,7 +305,7 @@ function Pages.new(context, widgets)
                     end
                     flow:add(api.flavorText(def, showCompleted))
                 end
-            end, actions)
+            end, actions, nil, nil, def.contactId)
         end
     end
 
@@ -322,7 +323,14 @@ function Pages.new(context, widgets)
             local id = def.id
             local offered = Prices.offered(def, funds and funds.prices)
             local displayedCounts = counts[id]
-            if Prices.supported(def) and funds then displayedCounts = {tonumber(funds.total) or 0} end
+            local moneyCost, _, hasMoney = Prices.split(offered)
+            local bankTrade = Prices.supported(def) or not def.service and hasMoney
+            if bankTrade and funds then
+                displayedCounts = {}
+                for index, entry in ipairs(offered or {}) do
+                    displayedCounts[index] = Prices.isMoney(entry) and (tonumber(funds.total) or 0) or counts[id][index]
+                end
+            end
             local title, actions = {}, {}
             local options, option = (pageState.serviceOptions or {})[id] or {}, nil
             if def.service then
@@ -337,7 +345,7 @@ function Pages.new(context, widgets)
             for index, item in ipairs(offered or {}) do
                 affordable = affordable and (displayedCounts[index] or 0) >= (tonumber(item.amount) or 0)
             end
-            if Prices.supported(def) and funds and funds.available == false then affordable = false end
+            if bankTrade and funds then affordable = affordable and funds.available ~= false and (tonumber(funds.total) or 0) >= moneyCost end
             actions[#actions + 1] = action(def.service and text("RequestService", "REQUEST SERVICE") or modeText("Trade", "TRADE"), function()
                 if not inside(current()) or not api.isUnlocked(current().contactTrust, def) then return end
                 if option then
@@ -367,14 +375,18 @@ function Pages.new(context, widgets)
         end
     end
 
+    function view.hide()
+        if liveUI then ServiceSelector.clear(liveUI); BarterPage.hide(liveUI) end
+        if liveUI and livePage == "garage" then GaragePage.hide(liveUI) end
+    end
+
     function view.close()
         if supplyPlayer then
             local owner = supplyPlayer
             supplyPlayer, heartbeat = nil, nil
             ExtractionMode.Client.sendCommand(owner, "SetUpgradePanelOpen", {open = false})
         end
-        if liveUI then ServiceSelector.clear(liveUI); BarterPage.hide(liveUI) end
-        if liveUI and livePage == "garage" then GaragePage.hide(liveUI) end
+        view.hide()
         liveUI, livePage, pageState = nil, nil, nil
     end
 
@@ -439,9 +451,9 @@ function Pages.new(context, widgets)
         end
         local pad, y = 16, body.y
         local page, usedSelectors = {}, {}
-        function page.card(title, build, items, icon, selector)
-            local iconSize = icon and 54 or 0
-            local offset = icon and iconSize + 14 or 0
+        function page.card(title, build, items, icon, selector, contact)
+            local iconSize = (icon or contact) and 54 or 0
+            local offset = iconSize > 0 and iconSize + 14 or 0
             local width = body.w - 2 * pad - offset
             local flow = ExtractionMode.TextLayout.flow(width)
             flow:add(title, UIFont.Medium)
@@ -450,7 +462,9 @@ function Pages.new(context, widgets)
             local height = 2 * pad + math.max(iconSize, flow.y + actions.height + (actions.height > 0 and 8 or 0) + (selector and widgets.buttonHeight() + 8 or 0))
             widgets.panel(ui, pda, body.x, y, body.w, height)
             local x, contentY = body.x + pad, y + pad
-            if icon then
+            if contact then
+                Style.emblem(ui, contact, x, contentY, iconSize)
+            elseif icon then
                 widgets.panel(ui, pda, x, contentY, iconSize, iconSize)
                 ui:drawTextureScaledAspect(icon, x + 4, contentY + 4, iconSize - 8, iconSize - 8, 1, 1, 1, 1)
             end

@@ -60,12 +60,20 @@ end
 assert(loadstring("function S.Spendable" .. bankChargeSource))()
 local definition = {id = "porch_repair", service = "melee", contactId = "porch", requiredTrust = 10,
     offered = {{types = {"Base.Money"}, amount = 20}}}
+definition.requirements = definition.offered
+Upgrades = {requirementItems = function(p, entry)
+    local result = {}
+    local items = p:getInventory():getAllTypeRecurse(entry.types[1])
+    for i=0,items:size()-1 do result[#result+1]=items:get(i) end
+    return result
+end, requirementCount = function(p, entry) return p:getInventory():getAllTypeRecurse(entry.types[1]):size() end}
+assert(loadstring(consumeSource))()
 local barters = {definitions = function() return {definition} end,
     isUnlocked = function(trust, def) return (trust[def.contactId] or 0) >= def.requiredTrust end,
     serviceCost = function(def) return def.offered[1].amount end,
     serviceTier = function() return 1 end,
-    requirementsMet = function(p, def) return Cur.Value(p) >= def.offered[1].amount end,
-    consumeRequirements = function(p, def) return Cur.Charge(p, def.offered[1].amount) end}
+    requirementsMet = function(p, def) return Upgrades.requirementsMet(p, def) end,
+    consumeRequirements = function(p, def) return Upgrades.consumeRequirements(p, def) end}
 ExtractionMode.Barters = barters
 package.loaded["ExtractionMode/Barters"] = true
 local services = assert(loadstring(serviceSource))()
@@ -131,6 +139,36 @@ SandboxVars.ExtractionModePDA.MeleeRepairCost = math.huge
 assert(prices.get("melee") == 100000)
 SandboxVars.ExtractionModePDA.MeleeRepairCost = 0/0
 assert(prices.get("melee") == 20)
+local purchase={id="purchase",offered={{types={"Base.Money"},amount=25}}}
+purchase.requirements=purchase.offered
+p=player(5,30)
+assert(barters.requirementsMet(p,purchase) and barters.consumeRequirements(p,purchase))
+assert(Cur.Value(p)==0 and p.account.bal==10, "all regular Money barters use the native cash-plus-bank payment")
+local mixed={id="mixed",offered={{types={"Base.Money"},amount=20},{types={"Base.Bandage"},amount=1}}}
+mixed.requirements=mixed.offered
+p=player(0,100)
+assert(not barters.requirementsMet(p,mixed) and not barters.consumeRequirements(p,mixed) and p.account.bal==100,
+    "bank money never replaces a required material")
+p:getInventory():AddItem("Base.Bandage")
+assert(barters.consumeRequirements(p,mixed) and p.account.bal==80)
+assert(p:getInventory():getAllTypeRecurse("Base.Bandage"):size()==0, "native mixed-material consumption remains intact")
+p=player(3,97)
+p:getInventory():AddItem("Base.Bandage")
+local consume=Upgrades.consumeRequirements
+Upgrades.consumeRequirements=function() return false end
+assert(not barters.consumeRequirements(p,mixed) and p.account.bal==97 and Cur.Value(p)==3,
+    "failed material consumption refunds both cash and bank")
+Upgrades.consumeRequirements=consume
+local summed={offered={{types={"Base.Money"},amount=20},{types={"Base.Money"},amount=20}}}
+summed.requirements=summed.offered
+p=player(0,30)
+assert(not barters.requirementsMet(p,summed) and not barters.consumeRequirements(p,summed) and p.account.bal==30,
+    "multiple Money requirements are summed, rather than spending the same balance twice")
+local reward={offered={{types={"Base.Cigarettes"},amount=1}},received={{fullType="Base.Money",amount=10}}}
+reward.requirements=reward.offered
+p=player(0,100)
+p:getInventory():AddItem("Base.Cigarettes")
+assert(barters.consumeRequirements(p,reward) and p.account.bal==100, "Money rewards remain in the native reward delivery flow")
 assert(not prices.supported({service="melee",offered={{types={"Base.Bandage"},amount=1}}}), "material-based custom services stay native")
 assert(services.complete ~= originalComplete)
 local currentComplete = services.complete

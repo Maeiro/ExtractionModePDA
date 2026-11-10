@@ -16,6 +16,23 @@ function Prices.supported(definition)
     return #offered == 1 and offered[1].types and #offered[1].types == 1 and offered[1].types[1] == "Base.Money"
 end
 
+function Prices.isMoney(entry)
+    if not entry then return false end
+    return (entry.types and #entry.types == 1 and entry.types[1] == "Base.Money")
+        or (not entry.types and entry.fullType == "Base.Money")
+end
+
+function Prices.split(offered)
+    local cost, materials, hasMoney = 0, {}, false
+    for _, entry in ipairs(offered or {}) do
+        if Prices.isMoney(entry) then
+            hasMoney = true
+            cost = cost + math.max(0, math.ceil(tonumber(entry.amount) or 0))
+        else materials[#materials + 1] = entry end
+    end
+    return cost, materials, hasMoney
+end
+
 function Prices.get(service, authoritative)
     local setting = Prices.settings[service]
     if not setting then return nil end
