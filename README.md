@@ -15,7 +15,9 @@ The integration is independent of Viewpoint Extraction Support. Install this mod
 ## Features
 
 - Adds an Extraction tab and makes it available as the PDA's initial screen.
-- Provides dedicated PDA pages for the overview, upgrades, missions, barter, and garage, with a shared layout and scrolling. The Garage page follows the original two-column layout, with saved vehicles and trailers beside the preview and controls. Vehicle previews use Extraction Mode's native 3D model when compatible, with its illustration fallback otherwise.
+- Provides dedicated PDA pages for the overview, upgrades, missions, barter, and garage, with a shared layout and scrolling. Upgrade and mission requirements show item icons and skill book volumes; mission rewards show item icons too.
+- Organizes barter offers into trader tabs and replaces ambiguous repair-service controls with named target selectors.
+- Keeps the original two-column Garage layout, with saved vehicles and trailers beside the preview and controls. Vehicle previews use Extraction Mode's native 3D model when compatible, with its illustration fallback otherwise.
 - Routes deployment, invitations, and administrative and debug tools through the PDA's window docking.
 - Provides a dashboard with destination selection, raid readiness, hideout generator controls, and a mission summary.
 - Shows a contextual board button in Operation Status while Extraction Mode makes boarding available, using its native action.
@@ -37,5 +39,11 @@ For Workshop packaging, use the `content` folder as the upload content folder. I
 The source repository's integration specifications use Python with `lupa`'s Lua 5.1 runtime:
 
 ```powershell
-python tests/extraction_mode_pda/run.py
+python tests/run.py --extraction-root <ExtractionMode>
 ```
+
+The upgrade and mission requirement lists show item icons and the appropriate skill book volume. Barter contacts have fixed tabs, and service targets use a named dropdown with the current preview and the original server quote validation. Page scrolling uses a larger step.
+
+The optional ZombieBuddy 2.3.4+ Java helper protects only PDA garage preview scenes. Animated parts wait until their skin transforms are available, then rejoin the native 3D preview. Vehicle scripts and world vehicle models are never changed. Without the helper, unsafe animated models retain the mechanics illustration fallback. Extraction Mode still controls its own Snow/Gore illustration rules and fallback for native failures.
+
+Build the preview helper with `./build.ps1 -ZombieBuddyJar <ZombieBuddy.jar>`. A game restart is required to load the helper. The Lua interface remains available without ZombieBuddy.

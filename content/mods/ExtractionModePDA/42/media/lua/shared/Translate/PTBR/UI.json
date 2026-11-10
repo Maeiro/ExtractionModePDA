@@ -184,5 +184,6 @@
   "UI_PRPGE_Config_WorldDangerS5DragDown": "Etapa 5: Podem derrubar jogadores",
   "UI_PRPGE_Config_WorldDangerS5FenceLunge": "Etapa 5: Podem avançar sobre cercas",
   "UI_PRPGE_Config_WorldDangerS5RespawnHours": "Etapa 5: Intervalo de respawn (horas)",
-  "UI_PRPGE_Config_WorldDangerS5RespawnPercent": "Etapa 5: Multiplicador de respawn (%)"
+  "UI_PRPGE_Config_WorldDangerS5RespawnPercent": "Etapa 5: Multiplicador de respawn (%)",
+  "UI_ExtractionModePDA_SelectServiceTarget": "Selecionar um alvo..."
 }

@@ -166,6 +166,9 @@ function Dashboard.new(context)
     end
     local function drawFlow(ui, pda, flow, x, y)
         for _, run in ipairs(flow.runs) do
+            if run.icon then
+                ui:drawTextureScaledAspect(run.icon, x, y + run.iconY, run.iconSize, run.iconSize, 1, 1, 1, 1)
+            end
             local color = run.warning and {1, 0.78, 0.28} or run.font == UIFont.Medium and pda.P.accent or pda.P.text
             ui:drawText(run.text, x + (run.x or 0), y + run.y, color[1], color[2], color[3], 1, run.font or UIFont.Small)
         end

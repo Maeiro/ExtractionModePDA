@@ -1,4 +1,5 @@
 local GaragePage = {}
+local PreviewSafety = require "ExtractionModePDA/GaragePreviewSafety"
 
 local function owns(data, record)
     return record ~= nil and tostring(record.owner or "") == tostring(data.garageOwner or "")
@@ -60,6 +61,7 @@ local function preview(page, record, x, y, width, height)
         local scene = ISUI3DScene:new(x, y, width, height)
         scene:initialise()
         scene:instantiate()
+        if ExtractionModePDAPreviewBridge then ExtractionModePDAPreviewBridge.watch(scene.javaObject) end
         scene.javaObject:fromLua1("setDrawGrid", false)
         scene.javaObject:fromLua1("createVehicle", "garageVehicle")
         scene:setView("UserDefined")
@@ -77,6 +79,10 @@ local function preview(page, record, x, y, width, height)
     local scene, surface = ui._empdaGarageScene, ui._empdaGarageSurface
     local scriptName = tostring(record.scriptName or "")
     if scene.extractionScriptName ~= scriptName then
+        if not ExtractionModePDAPreviewBridge and PreviewSafety.requiresIllustration(scriptName) then
+            scene.extractionFailedScripts = scene.extractionFailedScripts or {}
+            scene.extractionFailedScripts[scriptName] = true
+        end
         api.show(scene, record)
         local result = scene.extractionRender3D and "3D model"
             or scene.extractionIllustration and "2D illustration" or "unavailable"

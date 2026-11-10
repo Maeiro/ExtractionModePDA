@@ -758,7 +758,7 @@ local function installPageHooks(ui, pda)
                 if isInside(x, y, rect) then
                     if state.dashboard.pages.wheel(owner, x, y, delta) then return true end
                     local maximum = math.max(0, (owner._empdaExtractionContentH or 0) - rect.h)
-                    owner._empdaExtractionScroll = math.max(0, math.min(maximum, (owner._empdaExtractionScroll or 0) + delta * 42))
+                    owner._empdaExtractionScroll = math.max(0, math.min(maximum, (owner._empdaExtractionScroll or 0) + delta * 100))
                     return true
                 end
             end

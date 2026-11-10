@@ -10,7 +10,9 @@
 Adds Extraction Mode screens to the ProjectRPGExpanded Survivor PDA.
 [h2]Features[/h2]
 [list][*]Adds an Extraction tab and lets you choose it as the PDA's startup screen.
-[*]Provides dedicated PDA pages for the overview, upgrades, missions, barter and garage, with scrolling and the original garage layout.
+[*]Provides dedicated PDA pages for the overview, upgrades, missions, barter and garage, with scrolling and the original two-column garage layout.
+[*]Shows item icons for upgrade and mission requirements, skill book volumes, and mission rewards.
+[*]Organizes barter offers into trader tabs and provides named target selectors for repair services.
 [*]Integrates destination selection, deployment, social, administration and debug screens with the PDA.
 [*]Shows destination, team readiness, hideout generator controls and a mission summary on the dashboard.
 [*]Shows a contextual boarding button when Extraction Mode allows boarding, using its native action.
@@ -18,8 +20,7 @@ Adds Extraction Mode screens to the ProjectRPGExpanded Survivor PDA.
 [*]Explains that raids have no fixed end time and shows the next horde or wave timing when available.
 [*]Adds a Zombies category to ProjectRPGExpanded's server settings with per-stage Custom World Danger controls for zombie behavior, perception, infection and respawn rules.
 [*]Uses the PDA's own language setting, with English and Brazilian Portuguese text.
-[*]Hides the native Extraction Mode interface while its PDA interface is active.
-[*]Closes integrated pages with the PDA and applies the PDA theme throughout.
+[*]Hides the native Extraction Mode interface while its PDA interface is active, and closes integrated pages with the PDA.
 [*]Hides the ProjectRPGExpanded player portrait while the world map is open to prevent map icon rendering issues, and keeps the player card behind Ergonomic UI.
 [*]In single-player with the Viewpoint beta, direct UI rendering keeps the open PDA updating with each game frame.[/list]
 [h2]Requirements[/h2]
@@ -30,5 +31,5 @@ This addon is independent of Viewpoint Extraction Support. If the installed PDA 
 
 Workshop ID: 3831366933
 Mod ID: ExtractionModePDA"
-		"changenote" "0.1.9: Catches native 3D vehicle preview failures in the PDA garage and falls back to the available illustration or an unavailable message."
+	"changenote" "0.2.1: Improves upgrade and mission item icons, adds trader tabs and named service target selectors, and protects the PDA garage 3D preview."
 }

@@ -184,5 +184,6 @@
   "UI_PRPGE_Config_WorldDangerS5DragDown": "Stage 5: Can drag players down",
   "UI_PRPGE_Config_WorldDangerS5FenceLunge": "Stage 5: Can lunge over fences",
   "UI_PRPGE_Config_WorldDangerS5RespawnHours": "Stage 5: Respawn interval (hours)",
-  "UI_PRPGE_Config_WorldDangerS5RespawnPercent": "Stage 5: Respawn multiplier (%)"
+  "UI_PRPGE_Config_WorldDangerS5RespawnPercent": "Stage 5: Respawn multiplier (%)",
+  "UI_ExtractionModePDA_SelectServiceTarget": "Select a target..."
 }

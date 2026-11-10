@@ -1,5 +1,7 @@
 local Tracking = require "ExtractionModePDA/QuestTracking"
 local GaragePage = require "ExtractionModePDA/GaragePage"
+local Icons = require "ExtractionModePDA/ItemIcons"
+local ServiceSelector = require "ExtractionModePDA/ServiceSelector"
 local Pages = {}
 local serviceIcons = {
     wound = "Base.FirstAidKit", clothing = "Base.Needle",
@@ -77,8 +79,8 @@ function Pages.new(context, widgets)
         for index, entry in ipairs(entries or {}) do
             local amount, count = tonumber(entry.amount) or 0, tonumber(counts[index]) or 0
             met = met and count >= amount
-            flow:add(label(entry) .. ": " .. math.min(count, amount) .. "/" .. amount)
-            if count < amount then flow.runs[#flow.runs].warning = true end
+            Icons.row(flow, label(entry) .. ": " .. math.min(count, amount) .. "/" .. amount,
+                Icons.requirement(entry), count < amount)
         end
         return met
     end
@@ -203,7 +205,8 @@ function Pages.new(context, widgets)
                         table.concat(api.missingPrerequisiteNames(data.upgrades, definition), ", "))) end
                     requirements(flow, definition.requirements, materialCounts, api.label)
                     for _, skill in ipairs(definition.skillRequirements or {}) do
-                        flow:add(api.label(skill) .. ": " .. api.skillLevel(player(), skill) .. "/" .. (skill.level or 0))
+                        Icons.row(flow, api.label(skill) .. ": " .. api.skillLevel(player(), skill) .. "/" .. (skill.level or 0),
+                            Icons.skill(skill), api.skillLevel(player(), skill) < (skill.level or 0))
                     end
                 end
             end, actions)
@@ -279,7 +282,8 @@ function Pages.new(context, widgets)
                     end
                     requirements(flow, def.requirements, counts[id] or {}, api.label)
                     for _, skill in ipairs(def.skillRequirements or {}) do
-                        flow:add(api.label(skill) .. ": " .. api.skillLevel(player(), skill) .. "/" .. (skill.level or 0))
+                        Icons.row(flow, api.label(skill) .. ": " .. api.skillLevel(player(), skill) .. "/" .. (skill.level or 0),
+                            Icons.skill(skill), api.skillLevel(player(), skill) < (skill.level or 0))
                     end
                 end
                 if expanded then
@@ -293,7 +297,7 @@ function Pages.new(context, widgets)
                         elseif reward.type == "campaign" then
                             flow:add(modeText("CompleteCampaign", "Complete the campaign"))
                         elseif reward.type == "item" then
-                            flow:add(tostring(reward.amount or 1) .. "x " .. (reward.label and api.label(reward) or tostring(reward.fullType)))
+                            Icons.row(flow, tostring(reward.amount or 1) .. "x " .. (reward.label and api.label(reward) or tostring(reward.fullType)), Icons.requirement(reward))
                         end
                     end
                     flow:add(api.flavorText(def, showCompleted))
@@ -305,7 +309,10 @@ function Pages.new(context, widgets)
     local function barter(page, data)
         if reference(data) then page.card(text("BarterAtHideout", "Barter is available at the hideout.")); return end
         local api, localization = ExtractionMode.Barters, ExtractionMode.Localization
-        local definitions = api.unlockedDefinitions(data.contactTrust)
+        local definitions = {}
+        for _, definition in ipairs(api.unlockedDefinitions(data.contactTrust)) do
+            if definition.contactId == pageState.contact then definitions[#definitions + 1] = definition end
+        end
         if #definitions == 0 then page.card(text("NoBarters", "No trades unlocked.")); return end
         local counts = countsFor(definitions, "offered", api.requirementCounts, data)
         local contacts = {}
@@ -326,12 +333,6 @@ function Pages.new(context, widgets)
                 for index, candidate in ipairs(options) do
                     if pageState.serviceTarget[id] == candidate.id then selected, option = index, candidate; break end
                 end
-                local function selectTarget(delta)
-                    local target = options[selected + delta]
-                    if target then pageState.serviceTarget[id] = target.id end
-                end
-                actions[#actions + 1] = action("‹", function() selectTarget(-1) end, selected > 1)
-                actions[#actions + 1] = action("›", function() selectTarget(1) end, selected < #options)
             else
                 for _, item in ipairs(def.received or {}) do title[#title + 1] = (item.amount or 1) .. "x " .. api.label(item) end
             end
@@ -365,7 +366,8 @@ function Pages.new(context, widgets)
                         flow:add(localization.text(#options > 0 and "Select a target..." or "No eligible targets available", "service"))
                     end
                 end
-            end, actions, barterTexture(def))
+            end, actions, barterTexture(def), def.service and {id = id, selected = pageState.serviceTarget[id],
+                options = options, service = def.service})
         end
     end
 
@@ -375,6 +377,7 @@ function Pages.new(context, widgets)
             supplyPlayer, heartbeat = nil, nil
             ExtractionMode.Client.sendCommand(owner, "SetUpgradePanelOpen", {open = false})
         end
+        if liveUI then ServiceSelector.clear(liveUI) end
         if liveUI and livePage == "garage" then GaragePage.hide(liveUI) end
         liveUI, livePage, pageState = nil, nil, nil
     end
@@ -416,8 +419,37 @@ function Pages.new(context, widgets)
     function view.render(ui, pda, top, section)
         view.update(ui, section)
         if not pageState then return end
-        local body = widgets.beginBody(ui, top)
         local data = current()
+        if section == "barter" and not reference(data) then
+            local tabs, seen = {}, {}
+            local definitions = ExtractionMode.Barters.unlockedDefinitions(data.contactTrust)
+            local selectedExists = false
+            for _, definition in ipairs(definitions) do
+                if definition.contactId == pageState.contact then selectedExists = true end
+            end
+            if not selectedExists then
+                pageState.contact = definitions[1] and definitions[1].contactId
+                ui._empdaExtractionScroll = 0
+            end
+            for _, definition in ipairs(definitions) do
+                local contact = definition.contactId
+                if not seen[contact] then
+                    seen[contact] = true
+                    tabs[#tabs + 1] = action(ExtractionMode.Quests.contactDisplayName(contact), function()
+                        ServiceSelector.clear(ui)
+                        pageState.contact = contact
+                        ui._empdaExtractionScroll = 0
+                        invalidate()
+                    end, true, contact == pageState.contact)
+                end
+            end
+            local row = widgets.actions(tabs, ui.width - 36)
+            local before = #ui._empdaExtractionHits
+            widgets.drawActions(ui, pda, row, 18, top)
+            for index = before + 1, #ui._empdaExtractionHits do ui._empdaExtractionHits[index].navigation = true end
+            top = top + row.height + 12
+        end
+        local body = widgets.beginBody(ui, top)
         if section == "garage" and not data.state then GaragePage.hide(ui) end
         if section == "garage" and data.state then
             local bottom = GaragePage.render({
@@ -433,8 +465,8 @@ function Pages.new(context, widgets)
             return
         end
         local pad, y = 16, body.y
-        local page = {}
-        function page.card(title, build, items, icon)
+        local page, usedSelectors = {}, {}
+        function page.card(title, build, items, icon, selector)
             local iconSize = icon and 54 or 0
             local offset = icon and iconSize + 14 or 0
             local width = body.w - 2 * pad - offset
@@ -442,7 +474,7 @@ function Pages.new(context, widgets)
             flow:add(title, UIFont.Medium)
             if build then build(flow) end
             local actions = widgets.actions(items or {}, width)
-            local height = 2 * pad + math.max(iconSize, flow.y + actions.height + (actions.height > 0 and 8 or 0))
+            local height = 2 * pad + math.max(iconSize, flow.y + actions.height + (actions.height > 0 and 8 or 0) + (selector and widgets.buttonHeight() + 8 or 0))
             widgets.panel(ui, pda, body.x, y, body.w, height)
             local x, contentY = body.x + pad, y + pad
             if icon then
@@ -450,13 +482,35 @@ function Pages.new(context, widgets)
                 ui:drawTextureScaledAspect(icon, x + 4, contentY + 4, iconSize - 8, iconSize - 8, 1, 1, 1, 1)
             end
             widgets.flow(ui, pda, flow, x + offset, contentY)
-            widgets.drawActions(ui, pda, actions, x + offset, contentY + flow.y + 8)
+            local actionY = contentY + flow.y + 8
+            if selector then
+                local choices = {}
+                for _, option in ipairs(selector.options) do
+                    choices[#choices + 1] = {id = option.id,
+                        label = ExtractionMode.Localization.serviceLabel(option.label, selector.service)}
+                end
+                local placeholder = text("SelectServiceTarget", "Select a target...")
+                local label = placeholder
+                for _, option in ipairs(choices) do if option.id == selector.selected then label = option.label end end
+                local h = widgets.buttonHeight()
+                if actionY >= body.top and actionY + h <= body.bottom then
+                    usedSelectors[selector.id] = true
+                    local combo = ServiceSelector.show(ui, pda.P, {id = selector.id, selected = selector.selected,
+                        options = choices, placeholder = placeholder, enabled = inside(data),
+                        choose = function(id) pageState.serviceTarget[selector.id] = id end}, x + offset, actionY, width, h)
+                    widgets.button(ui, pda, x + offset, actionY, width, label .. "  v", function() combo:forceClick() end,
+                        not combo.disabled)
+                end
+                actionY = actionY + h + 8
+            end
+            widgets.drawActions(ui, pda, actions, x + offset, actionY)
             y = y + height + 10
         end
         if not data.state then page.card(text("Waiting", "Waiting for Extraction Mode state..."))
         elseif section == "upgrades" then upgrades(page, data)
         elseif section == "quests" then missions(page, data)
         elseif section == "barter" then barter(page, data) end
+        ServiceSelector.hideUnused(ui, usedSelectors)
         widgets.endBody(ui, pda, body, y)
     end
     return view
