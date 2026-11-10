@@ -16,7 +16,7 @@ The integration is independent of Viewpoint Extraction Support. Install this mod
 
 - Adds an Extraction tab and makes it available as the PDA's initial screen.
 - Provides dedicated PDA pages for the overview, upgrades, missions, barter, and garage, with a shared layout and scrolling. Upgrade and mission requirements show item icons and skill book volumes; mission rewards show item icons too.
-- Organizes barter contacts in a sidebar with a fixed profile and animated 3D portrait, using the PDA's native portrait renderer. Offers appear in a responsive card grid with item/service filters and named service target selectors. Smaller PDA windows use contact tabs to keep every contact accessible.
+- Organizes barter contacts in a sidebar with a fixed profile and animated 3D portrait, using the PDA's native portrait and camera-connection effects. Contact emblems, colors, buttons, and crisp item rendering reuse the PDA's trader styling. The trust meter follows Extraction Mode's trade and service unlock thresholds, including custom thresholds; it does not add trader discounts or dialogue. Offers appear in a responsive card grid with item/service filters and named service target selectors. Smaller PDA windows use contact tabs to keep every contact accessible.
 - Gives Extraction Mode contacts distinct appearances made from vanilla clothing. Portraits appear only in the interface; they do not spawn NPCs or change the world.
 - Keeps the original two-column Garage layout, with saved vehicles and trailers beside the preview and controls. Vehicle previews use Extraction Mode's native 3D model when compatible, with its illustration fallback otherwise.
 - Routes deployment, invitations, and administrative and debug tools through the PDA's window docking.

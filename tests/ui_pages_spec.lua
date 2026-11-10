@@ -2,6 +2,7 @@ UIFont = {Small = "small", Medium = "medium"}
 getTextManager = function() return {getFontHeight = function() return 14 end,
     MeasureStringX = function(_, _, value) return #value * 6 end} end
 getTimestampMs = function() return 1000 end
+getTexture = function(name) return name end
 local textures = {}
 instanceItem = function(fullType)
     textures[fullType] = true
@@ -61,9 +62,14 @@ local ui = {width = 900, height = 1100, _empdaExtractionHits = {}, children = {}
 function ui:addChild(child) self.children[child] = true end
 function ui:removeChild(child) self.children[child] = nil end
 function ui:drawTextureScaledAspect() end
+function ui:drawTextureScaled() end
+function ui:drawRect() end
+function ui:drawRectBorder() end
+function ui:drawTextZoomed() end
 function ui:setStencilRect() end
 function ui:drawTextCentre() end
 local palette = {panel = {0,0,0}, edge = {1,1,1}, text = {1,1,1}, muted = {0.5,0.5,0.5}}
+palette.accent, palette.screen, palette.well, palette.row, palette.buttonHover = palette.text, palette.panel, palette.panel, palette.panel, palette.panel
 local widgets = {player = function() return player end, allowed = function() return true end,
     inside = function(d) return d.state == "HIDEOUT" end,
     send = function(command, args) sent[#sent + 1] = {command, args} end,
@@ -77,6 +83,11 @@ local widgets = {player = function() return player end, allowed = function() ret
         for _, item in ipairs(row.items) do buttons[#buttons + 1] = item end
     end,
     button = function(_, _, _, _, _, text, callback, enabled) buttons[#buttons + 1] = {label=text,action=callback,enabled=enabled} end,
+    hit = function(_, rect, callback)
+        rect.action, rect.enabled = callback, true
+        buttons[#buttons + 1] = rect
+        ui._empdaExtractionHits[#ui._empdaExtractionHits + 1] = rect
+    end,
     beginBody = function(_, top, left, width) return {x = left or 18,w = width or 864,y = top,top = top,bottom = 1100,h = 1100-top} end,
     endBody = function() end}
 local Pages = require "ExtractionModePDA/Pages"

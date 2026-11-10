@@ -192,5 +192,10 @@
   "UI_ExtractionModePDA_NoMatchingOffers": "No offers in this category.",
   "UI_ExtractionModePDA_RequestService": "REQUEST SERVICE",
   "UI_ExtractionModePDA_YouGive": "You give",
-  "UI_ExtractionModePDA_YourMoney": "Your money: %1"
+  "UI_ExtractionModePDA_YourMoney": "Your money: %1",
+  "UI_ExtractionModePDA_BarterContacts": "EXTRACTION CONTACTS",
+  "UI_ExtractionModePDA_TrustValue": "Trust: %1",
+  "UI_ExtractionModePDA_NextTrustUnlock": "Next unlock at %1 Trust",
+  "UI_ExtractionModePDA_BarterTrustHint": "Trust unlocks more trades and improves services.",
+  "UI_ExtractionModePDA_BarterConnecting": "Connecting to %1..."
 }
