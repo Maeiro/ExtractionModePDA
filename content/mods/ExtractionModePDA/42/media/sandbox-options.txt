@@ -1,0 +1,51 @@
+VERSION = 1,
+
+option ExtractionModePDA.WoundTreatmentCost
+{
+    type = integer,
+    min = 0,
+    max = 100000,
+    default = 20,
+    page = ExtractionModePDA,
+    translation = ExtractionModePDA_WoundTreatmentCost,
+}
+
+option ExtractionModePDA.ClothingRepairCost
+{
+    type = integer,
+    min = 0,
+    max = 100000,
+    default = 10,
+    page = ExtractionModePDA,
+    translation = ExtractionModePDA_ClothingRepairCost,
+}
+
+option ExtractionModePDA.MeleeRepairCost
+{
+    type = integer,
+    min = 0,
+    max = 100000,
+    default = 20,
+    page = ExtractionModePDA,
+    translation = ExtractionModePDA_MeleeRepairCost,
+}
+
+option ExtractionModePDA.FirearmRepairCost
+{
+    type = integer,
+    min = 0,
+    max = 100000,
+    default = 20,
+    page = ExtractionModePDA,
+    translation = ExtractionModePDA_FirearmRepairCost,
+}
+
+option ExtractionModePDA.VehicleRepairCost
+{
+    type = integer,
+    min = 0,
+    max = 100000,
+    default = 20,
+    page = ExtractionModePDA,
+    translation = ExtractionModePDA_VehicleRepairCost,
+}

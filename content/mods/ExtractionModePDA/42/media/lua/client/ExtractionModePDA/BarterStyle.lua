@@ -14,9 +14,9 @@ function Style.color(contact, palette)
 end
 
 function Style.emblem(ui, contact, x, y, size, alpha)
-    local id = aliases[contact] or "SC"
+    local id = aliases[contact] and contact or "generic"
     if textures[id] == nil then
-        textures[id] = getTexture("media/ui/RPGSkillTreeExpanded/PRPGE_Trader_" .. id .. ".png") or false
+        textures[id] = getTexture("media/ui/ExtractionModePDA/Contact_" .. id .. ".png") or false
     end
     if textures[id] then ui:drawTextureScaled(textures[id], x, y, size, size, alpha or 1, 1, 1, 1) end
 end

@@ -1,0 +1,13 @@
+{
+  "Sandbox_ExtractionModePDA": "Extraction Mode PDA - Serviços",
+  "Sandbox_ExtractionModePDA_WoundTreatmentCost": "Custo do tratamento de ferimentos ($)",
+  "Sandbox_ExtractionModePDA_WoundTreatmentCost_tooltip": "Custo em dólares para todos os níveis de confiança deste serviço. Zero deixa o serviço gratuito. Usa primeiro a carteira e depois o saldo bancário; o servidor determina o preço.",
+  "Sandbox_ExtractionModePDA_ClothingRepairCost": "Custo do reparo de roupas ($)",
+  "Sandbox_ExtractionModePDA_ClothingRepairCost_tooltip": "Custo em dólares para todos os níveis de confiança deste serviço. Zero deixa o serviço gratuito. Usa primeiro a carteira e depois o saldo bancário; o servidor determina o preço.",
+  "Sandbox_ExtractionModePDA_MeleeRepairCost": "Custo do reparo de armas brancas ($)",
+  "Sandbox_ExtractionModePDA_MeleeRepairCost_tooltip": "Custo em dólares para todos os níveis de confiança deste serviço. Zero deixa o serviço gratuito. Usa primeiro a carteira e depois o saldo bancário; o servidor determina o preço.",
+  "Sandbox_ExtractionModePDA_FirearmRepairCost": "Custo do reparo de armas de fogo ($)",
+  "Sandbox_ExtractionModePDA_FirearmRepairCost_tooltip": "Custo em dólares para todos os níveis de confiança deste serviço. Zero deixa o serviço gratuito. Usa primeiro a carteira e depois o saldo bancário; o servidor determina o preço.",
+  "Sandbox_ExtractionModePDA_VehicleRepairCost": "Custo do reparo de peças de veículos ($)",
+  "Sandbox_ExtractionModePDA_VehicleRepairCost_tooltip": "Custo em dólares para todos os níveis de confiança deste serviço. Zero deixa o serviço gratuito. Usa primeiro a carteira e depois o saldo bancário; o servidor determina o preço."
+}

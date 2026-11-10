@@ -149,4 +149,30 @@ assert(trust.maximum==200 and trust.nextTrust==40 and table.concat(trust.thresho
     "trust meter uses contact trade thresholds and native service upgrades")
 trust=Style.trust(trustAPI,"doctor",300)
 assert(trust.value==300 and not trust.nextTrust and trust.maximum==200, "trust remains uncapped by the display scale")
+ui.width,ui.height,fontHeight,ctx.top=1680,960,18,230
+ui._empdaExtractionScroll,state.wallet,state.filter=0,0,nil
+local selector=require "ExtractionModePDA/ServiceSelector"
+local originalShow=selector.show
+selector.show=function() return {disabled=true} end
+local Icons=require "ExtractionModePDA/ItemIcons"
+ctx.build=function(page)
+    for i=1,6 do
+        page.card("Offer " .. i,function(flow)
+            flow:add("You give")
+            Icons.row(flow,"Money: 20/20","money-texture",false,24)
+            flow:add("Upgrades at 40 Trust")
+        end,{{label="REQUEST SERVICE",action=function() end}},"item-texture",{id=tostring(i),options={}})
+    end
+end
+ui._empdaExtractionHits={}
+render()
+local firstRow=0
+for _,rect in ipairs(ui._empdaExtractionHits) do
+    if rect.label=="REQUEST SERVICE" and rect.y<positions[6].y then
+        firstRow=firstRow+1
+        assert(rect.y+rect.h<=viewport.bottom,"normal PDA fits complete first-row service cards and their actions")
+    end
+end
+assert(firstRow==5)
+selector.show=originalShow
 print("Barter layout: responsive cards, fixed profile, filters, contact changes and owned portrait lifecycle passed")

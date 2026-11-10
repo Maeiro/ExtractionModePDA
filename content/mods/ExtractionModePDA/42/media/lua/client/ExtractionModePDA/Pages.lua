@@ -3,6 +3,7 @@ local GaragePage = require "ExtractionModePDA/GaragePage"
 local BarterPage = require "ExtractionModePDA/BarterPage"
 local Icons = require "ExtractionModePDA/ItemIcons"
 local ServiceSelector = require "ExtractionModePDA/ServiceSelector"
+local Prices = require "ExtractionModePDA/ServicePrices"
 local Pages = {}
 local serviceIcons = {
     wound = "Base.FirstAidKit", clothing = "Base.Needle",
@@ -75,13 +76,13 @@ function Pages.new(context, widgets)
         return counts
     end
 
-    local function requirements(flow, entries, counts, label)
+    local function requirements(flow, entries, counts, label, iconSize)
         local met = true
         for index, entry in ipairs(entries or {}) do
             local amount, count = tonumber(entry.amount) or 0, tonumber(counts[index]) or 0
             met = met and count >= amount
             Icons.row(flow, label(entry) .. ": " .. math.min(count, amount) .. "/" .. amount,
-                Icons.requirement(entry), count < amount)
+                Icons.requirement(entry), count < amount, iconSize)
         end
         return met
     end
@@ -316,8 +317,12 @@ function Pages.new(context, widgets)
         end
         if #definitions == 0 then page.card(text("NoBarters", "No trades unlocked.")); return end
         local counts = countsFor(definitions, "offered", api.requirementCounts, data)
+        local funds = (pageState.serviceOptions or {})._empdaFunds
         for _, def in ipairs(definitions) do
             local id = def.id
+            local offered = Prices.offered(def, funds and funds.prices)
+            local displayedCounts = counts[id]
+            if Prices.supported(def) and funds then displayedCounts = {tonumber(funds.total) or 0} end
             local title, actions = {}, {}
             local options, option = (pageState.serviceOptions or {})[id] or {}, nil
             if def.service then
@@ -329,9 +334,10 @@ function Pages.new(context, widgets)
                 for _, item in ipairs(def.received or {}) do title[#title + 1] = (item.amount or 1) .. "x " .. api.label(item) end
             end
             local affordable = inside(data)
-            for index, item in ipairs(def.offered or {}) do
-                affordable = affordable and (counts[id][index] or 0) >= (tonumber(item.amount) or 0)
+            for index, item in ipairs(offered or {}) do
+                affordable = affordable and (displayedCounts[index] or 0) >= (tonumber(item.amount) or 0)
             end
+            if Prices.supported(def) and funds and funds.available == false then affordable = false end
             actions[#actions + 1] = action(def.service and text("RequestService", "REQUEST SERVICE") or modeText("Trade", "TRADE"), function()
                 if not inside(current()) or not api.isUnlocked(current().contactTrust, def) then return end
                 if option then
@@ -347,15 +353,13 @@ function Pages.new(context, widgets)
             end, affordable and (not def.service or option ~= nil and option.canUse ~= false))
             page.card(table.concat(title, " + "), function(flow)
                 flow:add(text("YouGive", "You give"))
-                requirements(flow, def.offered, counts[id], api.label)
+                requirements(flow, offered, displayedCounts, api.label, 24)
                 if def.service then
                     local nextTrust = api.serviceNextTrust(def, data.contactTrust)
                     flow:add(nextTrust and modeText("ServiceNextTrust", "Upgrades at %1 Trust", tostring(nextTrust))
                         or modeText("ServiceMaximum", "Maximum Reached"))
                     if option then
                         if option.preview then flow:add(localization.text(option.preview, "service")) end
-                    elseif #options == 0 then
-                        flow:add(localization.text("No eligible targets available", "service"))
                     end
                 end
             end, actions, barterTexture(def), def.service and {id = id, selected = pageState.serviceTarget[id],

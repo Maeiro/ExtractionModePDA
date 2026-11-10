@@ -44,6 +44,7 @@ local trades = {
 ExtractionMode.Barters = {unlockedDefinitions = function() return trades end, requirementCounts = counts, label = label,
     serviceName = function() return "Minor treatment" end, serviceNextTrust = function() return 40 end,
     isUnlocked = function() return true end}
+package.loaded["ExtractionMode/Barters"] = true
 local quest = {id = "food", contactId = "doctor", requirements = {{label = "Food", amount = 5, types = {"Base.TinnedBeans"}}},
     skillRequirements = {{label = "Welding", level = 3}}, objectives = {}}
 ExtractionMode.Quests = {acquiredDefinitions = function() return {quest} end, isCompleted = function() return false end,
@@ -141,6 +142,14 @@ assert(#sent == before, "stale service quotes must not be submitted")
 render("barter")
 for _, button in ipairs(buttons) do if button.label == "REQUEST SERVICE" then button.action() end end
 assert(sent[#sent][1] == "CompleteBarter" and sent[#sent][2].quote == "new")
+view.receive("ExtractionMode", "BarterServices", {options={
+    heal={{id="neck",label="Neck - Cut",quote="bank",canUse=true}},
+    _empdaFunds={cash=0,bank=200,total=200,prices={wound=150},available=true}}})
+render("barter")
+local bankEnabled, serverPriceShown = false, false
+for _, button in ipairs(buttons) do if button.label=="REQUEST SERVICE" then bankEnabled=button.enabled end end
+for _, flow in ipairs(flows) do for _, run in ipairs(flow.runs) do if run.text=="Money: 150/150" then serverPriceShown=true end end end
+assert(bankEnabled and serverPriceShown and trades[1].offered[1].amount==20, "UI uses server funds/prices without mutating native trade definitions")
 combo.expanded = true
 view.close()
 assert(combo.hidden and not ui.children[combo], "closing PDA removes service controls and popups")

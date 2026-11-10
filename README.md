@@ -16,7 +16,7 @@ The integration is independent of Viewpoint Extraction Support. Install this mod
 
 - Adds an Extraction tab and makes it available as the PDA's initial screen.
 - Provides dedicated PDA pages for the overview, upgrades, missions, barter, and garage, with a shared layout and scrolling. Upgrade and mission requirements show item icons and skill book volumes; mission rewards show item icons too.
-- Organizes barter contacts in a sidebar with a fixed profile and animated 3D portrait, using the PDA's native portrait and camera-connection effects. Contact emblems, colors, buttons, and crisp item rendering reuse the PDA's trader styling. The trust meter follows Extraction Mode's trade and service unlock thresholds, including custom thresholds; it does not add trader discounts or dialogue. Offers appear in a responsive card grid with item/service filters and named service target selectors. Smaller PDA windows use contact tabs to keep every contact accessible.
+- Organizes barter contacts in a sidebar with a fixed profile and animated 3D portrait, using the PDA's native portrait and camera-connection effects. Original contact emblems use distinct symbols and hexagonal radio badges. Colors, buttons, camera effects, and crisp item rendering follow the PDA's trader styling. The trust meter follows Extraction Mode's trade and service unlock thresholds, including custom thresholds; it does not add trader discounts or dialogue. Offers appear in a responsive card grid with item/service filters and named service target selectors. Smaller PDA windows use contact tabs to keep every contact accessible.
 - Gives Extraction Mode contacts distinct appearances made from vanilla clothing. Portraits appear only in the interface; they do not spawn NPCs or change the world.
 - Keeps the original two-column Garage layout, with saved vehicles and trailers beside the preview and controls. Vehicle previews use Extraction Mode's native 3D model when compatible, with its illustration fallback otherwise.
 - Routes deployment, invitations, and administrative and debug tools through the PDA's window docking.
@@ -29,6 +29,14 @@ The integration is independent of Viewpoint Extraction Support. Install this mod
 - Keeps Extraction Mode's native HUD hidden while its interface is active in the PDA, hides the ProjectRPGExpanded player portrait while the world map is open to prevent map icon rendering issues, and keeps the player card behind Ergonomic UI.
 - In single-player with the Viewpoint beta, the open PDA uses direct UI rendering so it can update with each game frame. Viewpoint's extra frames resume when the PDA closes.
 
+## Service prices and bank payments
+
+Services use the Survivor PDA trader payment flow: carried cash (including money bundles) first, then an open, enabled bank account. Item-for-item barter still requires the offered inventory items. The server checks the player's current funds, native service target and single-use quote. A changed price requires a fresh selection; a native repair failure refunds cash and bank amounts to their original sources.
+
+In **Sandbox Options → Extraction Mode PDA - Services**, configure wound treatment, clothing repair, melee repair, firearm repair and vehicle part repair separately. Defaults match Extraction Mode: $20 for each service except clothing ($10). Prices are whole dollars from 0 to 100,000, with 0 allowing a free service. Each price applies to all native trust tiers of that service. Existing worlds use the defaults until configured.
+
+For dedicated servers, install and enable this mod on both the server and clients and configure the server's sandbox options. Prices and funds shown in the PDA come from the server's service snapshot; the client cannot supply the amount to charge. Restart the world/server after installing the addon or adding its sandbox definitions. If the expected PDA payment API is incompatible, supported services are refused rather than charging an incorrect price.
+
 ## Local installation
 
 Copy `content\mods\ExtractionModePDA` into `%UserProfile%\Zomboid\mods\ExtractionModePDA`, then enable **Extraction Mode PDA Integration**, **Extraction Mode**, and **ProjectRPGExpanded** in the same game or server configuration and restart the game.
@@ -40,7 +48,7 @@ For Workshop packaging, use the `content` folder as the upload content folder. I
 The source repository's integration specifications use Python with `lupa`'s Lua 5.1 runtime:
 
 ```powershell
-python tests/run.py --extraction-root <ExtractionMode>
+python tests/run.py --extraction-root <ExtractionMode> --pda-root <ProjectRPGExpanded>
 ```
 
 The upgrade and mission requirement lists show item icons and the appropriate skill book volume. Barter contacts have a fixed sidebar or compact tabs, and service targets use a named dropdown with the current preview and the original server quote validation. Page scrolling uses a larger step.

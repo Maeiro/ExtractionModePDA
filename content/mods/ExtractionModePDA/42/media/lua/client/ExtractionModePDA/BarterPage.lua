@@ -70,7 +70,8 @@ function Barter.render(ctx, data)
     local portraitRect
     if state.contact then
         local p, color = pda.P, Style.color(state.contact, pda.P)
-        local headerH = math.floor(math.max(lh * 8 + 32, math.min((bottom - top) * 0.44, 300)))
+        local compact = bottom - top < 550 or lh > 18
+        local headerH = math.floor(math.max(lh * 6 + 48, math.min((bottom - top) * 0.30, 210)))
         local modelW = math.floor(math.min(240, width * 0.27))
         widgets.panel(ui, pda, left, top, width, bottom - top)
         local face = {x = left + 12, y = top + 12, w = modelW, h = headerH - 12}
@@ -89,8 +90,8 @@ function Barter.render(ctx, data)
         Style.line(ui, pda, quests.contactDisplayName(state.contact), tx + titleH + 14, y + 2, tw - titleH - 14, p.text, titleFont)
         y = y + titleH + 12
         local description = quests.contactDescription and quests.contactDescription(state.contact) or focus
-        local lines = Layout.wrap(description or "", UIFont.Small, tw / scale)
-        for index = 1, math.min(2, #lines) do
+        local lines = Layout.wrap(compact and focus or description or "", UIFont.Small, tw / scale)
+        for index = 1, math.min(compact and 1 or 2, #lines) do
             Style.line(ui, pda, lines[index], tx, y, tw, color)
             y = y + lh + 2
         end
@@ -115,8 +116,12 @@ function Barter.render(ctx, data)
             local counts = owner and api.requirementCounts(owner, {{types = {"Base.Money"}, amount = 1}}) or {}
             state.wallet, state.walletAt = tonumber(counts[1]) or 0, now
         end
-        if state.wallet then
-            Style.line(ui, pda, text("YourMoney", "Your money: %1", tostring(state.wallet)), left + 4, top, width - 8, {1, 0.83, 0.40}, UIFont.Medium)
+        local funds = (state.serviceOptions or {})._empdaFunds
+        if state.wallet or funds then
+            local label = funds and text("ServiceFunds", "Available: %1 (cash: %2 / bank: %3)",
+                tostring(funds.total or 0), tostring(funds.cash or 0), tostring(funds.bank or 0))
+                or text("YourMoney", "Your money: %1", tostring(state.wallet))
+            Style.line(ui, pda, label, left + 4, top, width - 8, {1, 0.83, 0.40}, UIFont.Medium)
             top = top + Layout.height(UIFont.Medium) * scale + 8
         end
     end
@@ -161,7 +166,7 @@ function Barter.render(ctx, data)
             if card.build then card.build(card.flow) end
             card.row = {items = card.actions or {}}
             card.row.height = #card.row.items * (buttonH + 8)
-            card.height = 2 * pad + 96 + card.flow.y + gap + card.row.height
+            card.height = 2 * pad + 72 + card.flow.y + gap + card.row.height
                 + (card.selector and buttonH + 8 or 0)
             rowH = math.max(rowH, card.height)
         end
@@ -170,8 +175,8 @@ function Barter.render(ctx, data)
             local x = left + offset * (cardW + gap)
             Style.rounded(ui, x, y, cardW, rowH, 8, pda.P.row, 0.85)
             ui:drawRectBorder(x, y, cardW, rowH, 0.35, pda.P.accent[1], pda.P.accent[2], pda.P.accent[3])
-            if card.icon then Style.item(ui, card.icon, x + (cardW - 84) / 2, y + pad, 84) end
-            widgets.flow(ui, pda, card.flow, x + pad, y + pad + 96)
+            if card.icon then Style.item(ui, card.icon, x + (cardW - 64) / 2, y + pad, 64) end
+            widgets.flow(ui, pda, card.flow, x + pad, y + pad + 72)
             local actionY = y + rowH - pad - card.row.height
             local selector = card.selector
             if selector then
@@ -181,6 +186,7 @@ function Barter.render(ctx, data)
                     choices[#choices + 1] = {id = option.id, label = name}
                     if option.id == selector.selected then label = name end
                 end
+                if #choices == 0 then label = text("NoServiceTargets", "No eligible targets") end
                 local sy = actionY - buttonH - 8
                 if sy >= body.top and sy + buttonH <= body.bottom then
                     used[selector.id] = true

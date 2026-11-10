@@ -1,0 +1,13 @@
+{
+  "Sandbox_ExtractionModePDA": "Extraction Mode PDA - Services",
+  "Sandbox_ExtractionModePDA_WoundTreatmentCost": "Wound treatment cost ($)",
+  "Sandbox_ExtractionModePDA_WoundTreatmentCost_tooltip": "Cost in dollars for every trust tier of this service. Zero makes it free. Cash is used first, then the bank balance; the server determines the price.",
+  "Sandbox_ExtractionModePDA_ClothingRepairCost": "Clothing repair cost ($)",
+  "Sandbox_ExtractionModePDA_ClothingRepairCost_tooltip": "Cost in dollars for every trust tier of this service. Zero makes it free. Cash is used first, then the bank balance; the server determines the price.",
+  "Sandbox_ExtractionModePDA_MeleeRepairCost": "Melee weapon repair cost ($)",
+  "Sandbox_ExtractionModePDA_MeleeRepairCost_tooltip": "Cost in dollars for every trust tier of this service. Zero makes it free. Cash is used first, then the bank balance; the server determines the price.",
+  "Sandbox_ExtractionModePDA_FirearmRepairCost": "Firearm repair cost ($)",
+  "Sandbox_ExtractionModePDA_FirearmRepairCost_tooltip": "Cost in dollars for every trust tier of this service. Zero makes it free. Cash is used first, then the bank balance; the server determines the price.",
+  "Sandbox_ExtractionModePDA_VehicleRepairCost": "Vehicle part repair cost ($)",
+  "Sandbox_ExtractionModePDA_VehicleRepairCost_tooltip": "Cost in dollars for every trust tier of this service. Zero makes it free. Cash is used first, then the bank balance; the server determines the price."
+}
