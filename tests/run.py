@@ -7,10 +7,12 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--extraction-root', required=True, type=Path)
 parser.add_argument('--pda-root', required=True, type=Path)
 args = parser.parse_args()
-for name in ['garage_preview_safety_spec.lua', 'ui_pages_spec.lua', 'barter_layout_spec.lua', 'service_payments_spec.lua', 'sandbox_settings_spec.lua', 'page_transition_spec.lua']:
+for name in ['garage_preview_safety_spec.lua', 'ui_pages_spec.lua', 'barter_layout_spec.lua', 'service_payments_spec.lua', 'sandbox_settings_spec.lua', 'page_transition_spec.lua', 'offer_counts_spec.lua']:
     lua = LuaRuntime()
     lua.globals().clientPath = (root / '42/media/lua/client').as_posix()
     lua.globals().sharedPath = (root / '42/media/lua/shared').as_posix()
+    lua.globals().serverSource = (root / '42/media/lua/server/EMPD_HideoutMissionSupply.lua').as_posix()
+    lua.globals().clientSource = (root / '42/media/lua/client/ExtractionModePDA/HideoutMissionSupplyClient.lua').as_posix()
     lua.globals().layoutSource = (args.extraction_root / '42/media/lua/client/ExtractionMode/TextLayout.lua').read_text(encoding='utf-8-sig')
     lua.globals().serviceSource = (args.extraction_root / '42/media/lua/shared/ExtractionMode/BarterServices.lua').read_text(encoding='utf-8-sig')
     lua.globals().currencySource = (args.pda_root / '42/media/lua/shared/PRPGE_Currency.lua').read_text(encoding='utf-8-sig')

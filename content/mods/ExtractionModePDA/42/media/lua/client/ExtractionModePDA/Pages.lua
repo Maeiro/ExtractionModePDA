@@ -161,7 +161,10 @@ function Pages.new(context, widgets)
             local id = item.id
             tabs[#tabs + 1] = action(item.label, function() pageState.category = id; invalidate() end, true, id == category)
         end
-        page.card(text("UpgradeTab", "Upgrades"), nil, tabs)
+        local loading = inside(data) and HideoutMissionSupply.isLoading(data.hideoutUpgradeSupply)
+        page.card(text("UpgradeTab", "Upgrades"), loading and function(flow)
+            flow:add(text("SupplyLoading", "Checking hideout items..."))
+        end or nil, tabs)
         local definitions = api.definitionsForCategory(category)
         local counts = countsFor(definitions, "requirements", api.requirementCounts, data)
         local supply = data.hideoutUpgradeSupply or {}
@@ -237,7 +240,19 @@ function Pages.new(context, widgets)
         if inside(data) then
             HideoutMissionSupply.addQuestCounts(missionCounts, active, data.hideoutUpgradeSupply)
         end
-        page.card(text("Missions", "Missions"), nil, {
+        local loading = false
+        if inside(data) then
+            for _, definition in ipairs(active) do
+                if #(definition.requirements or {}) > 0
+                    and HideoutMissionSupply.isLoading(data.hideoutUpgradeSupply, HideoutMissionSupply.questId(definition.id)) then
+                    loading = true
+                    break
+                end
+            end
+        end
+        page.card(text("Missions", "Missions"), loading and function(flow)
+            flow:add(text("SupplyLoading", "Checking hideout items..."))
+        end or nil, {
             action(text("ActiveMissions", "Active missions"), function() pageState.completed = false end, true, not showCompleted),
             action(modeText("Completed", "COMPLETED"), function() pageState.completed = true end, not reference(data), showCompleted),
         })

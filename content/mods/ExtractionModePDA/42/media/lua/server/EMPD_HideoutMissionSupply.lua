@@ -104,10 +104,17 @@ local function operationItemTypes(home)
         if physicallyHome then pcall(function() inside = infection.playerInsideHideout(player) end) end
         local user = physicallyHome and inside and users[username] or nil
         if user then
-            for _, mission in ipairs(user.active or {}) do
-                if mission.item and (mission.kind == "deliver" or mission.kind == "craft" or mission.kind == "recover") then
-                    found[tostring(mission.item)] = true
+            local function include(missions)
+                for _, mission in ipairs(missions or {}) do
+                    if mission.item and (mission.kind == "deliver" or mission.kind == "craft" or mission.kind == "recover") then
+                        found[tostring(mission.item)] = true
+                    end
                 end
+            end
+            include(user.active)
+            include(user.mailOffers)
+            for _, relation in pairs(user.tr or {}) do
+                include(relation.board and relation.board.offers)
             end
         end
     end
@@ -228,35 +235,92 @@ local function store()
     return runtime and runtime.getRootStore and runtime.getRootStore() or nil
 end
 
-if type(Traders.Accept) == "function" then
-    local originalAccept = Traders.Accept
-    Traders.Accept = function(player, args)
-        local result = originalAccept(player, args)
-        if result == nil then
-            local home = homeFor(player)
-            if home then hideouts.with(home, function() index.invalidate("PDA operation accepted") end) end
-        end
-        return result
+local retainedSupplies = setmetatable({}, {__mode = "k"})
+local originalSnapshot, originalInvalidate = index.snapshot, index.invalidate
+local function copySnapshot(snapshot)
+    local result = {}
+    for key, value in pairs(snapshot) do result[key] = value end
+    result.counts = {}
+    for id, row in pairs(snapshot.counts or {}) do
+        result.counts[id] = {}
+        for position, count in pairs(row) do result.counts[id][position] = count end
     end
+    return result
 end
 
-if okStory and type(Story.SendStep) == "function" then
-    local originalSendStep = Story.SendStep
-    Story.SendStep = function(username, mission, step)
-        local result = originalSendStep(username, mission, step)
-        local story = okStoryData and StoryData.STORIES[mission and mission.st]
-        local definition = story and story.steps and story.steps[step]
-        if definition and definition.deliver then
-            for _, player in ipairs(em.Util and em.Util.players and em.Util.players() or {}) do
-                if playerUsername(player) == username then
-                    local home = homeFor(player)
-                    if home then pcall(function() hideouts.with(home, function() index.invalidate("PDA survivor delivery updated") end) end) end
-                    break
+index.snapshot = function()
+    local snapshot = originalSnapshot()
+    local home = hideouts.current()
+    if home then
+        if snapshot.ready or snapshot.enabled ~= true then retainedSupplies[home] = nil
+        elseif retainedSupplies[home] then return copySnapshot(retainedSupplies[home]) end
+    end
+    return snapshot
+end
+
+index.invalidate = function(...)
+    local home = hideouts.current()
+    if home then retainedSupplies[home] = nil end
+    return originalInvalidate(...)
+end
+
+local function consumeMissionSupplies(player, definition)
+    local inventory = em.InventoryAccess
+    if not inventory or not inventory.items or not inventory.containsItem then
+        return index.consumeUpgrade(player, definition, store())
+    end
+    local before = index.snapshot()
+    if before.ready ~= true then return index.consumeUpgrade(player, definition, store()) end
+    local playerItems, observed, definitions, known = {}, {}, {}, {}
+    for _, item in ipairs(inventory.items(player)) do playerItems[item] = true end
+    for _, entry in ipairs(originalDefinitions()) do definitions[#definitions + 1] = entry end
+    for _, entry in ipairs(externalDefinitions()) do definitions[#definitions + 1] = entry end
+    for _, entry in ipairs(definitions) do known[entry.id] = true end
+    for id in pairs(before.counts or {}) do if not known[id] then before.counts[id] = nil end end
+    local reliable = true
+    local matcher = upgrades.itemMatchesRequirement
+    upgrades.itemMatchesRequirement = function(item, requirement)
+        local matches = matcher(item, requirement)
+        if matches and not playerItems[item] and not observed[item] then
+            local captured = pcall(function()
+                local entry = {container = item:getContainer(), count = item:getCount(), rows = {}}
+                for _, candidate in ipairs(definitions) do
+                    if (before.counts or {})[candidate.id] then
+                        for position, needed in ipairs(candidate.requirements or {}) do
+                            if matcher(item, needed) then entry.rows[#entry.rows + 1] = {candidate.id, position} end
+                        end
+                    end
+                end
+                observed[item] = entry
+            end)
+            reliable = reliable and captured
+        end
+        return matches
+    end
+    local ok, consumed, reason = pcall(index.consumeUpgrade, player, definition, store())
+    upgrades.itemMatchesRequirement = matcher
+    if not ok then error(consumed) end
+    if consumed and reliable then
+        -- Keep only numeric totals; item references are used during this transaction alone.
+        local reconciled = pcall(function()
+            for item, entry in pairs(observed) do
+                local remaining = inventory.containsItem(entry.container, item) and item:getCount() or 0
+                local removed = math.max(0, entry.count - remaining)
+                if removed > 0 then
+                    local contents = inventory.itemContainer and inventory.itemContainer(item)
+                    if contents and not contents:isEmpty() then error("a nonempty container was consumed") end
+                    for _, row in ipairs(entry.rows) do
+                        before.counts[row[1]][row[2]] = math.max(0, before.counts[row[1]][row[2]] - removed)
+                    end
                 end
             end
+        end)
+        if reconciled then
+            local home = hideouts.current()
+            if home then retainedSupplies[home] = before end
         end
-        return result
     end
+    return consumed, reason
 end
 
 local function missionWorldRequirementsMet(player, definition)
@@ -285,7 +349,7 @@ quests.consumeRequirements = function(player, definition)
     local home = homeFor(player)
     if home == nil then return false end
     return hideouts.with(home, function()
-        return index.consumeUpgrade(player, definition, store())
+        return consumeMissionSupplies(player, definition)
     end)
 end
 
@@ -304,6 +368,35 @@ Traders.Progress = function(player, mission)
     local snapshot = hideouts.with(home, index.snapshot)
     local world = Supply.operationCount(snapshot, mission.item, okTraderData and TraderData or nil)
     return math.min(tonumber(mission.n) or progress, progress + world)
+end
+
+if type(Traders.Snapshot) == "function" and type(Traders.Count) == "function" then
+    local originalSnapshot = Traders.Snapshot
+    Traders.Snapshot = function(player)
+        local snapshot = originalSnapshot(player)
+        local home = index.enabled() and homeFor(player) or nil
+        local supplies = home and hideouts.with(home, index.snapshot) or nil
+        local counts = {}
+        local function annotate(offers)
+            for _, mission in ipairs(offers or {}) do
+                if mission.item and (mission.kind == "deliver" or mission.kind == "craft" or mission.kind == "recover") then
+                    if counts[mission.item] == nil then
+                        counts[mission.item] = Traders.Count(player, mission.item)
+                            + Supply.operationCount(supplies, mission.item, okTraderData and TraderData or nil)
+                    end
+                    mission.empdaAvailable = counts[mission.item]
+                    mission.empdaSupplyLoading = Supply.isLoading(supplies, Supply.operationId(mission.item))
+                end
+            end
+        end
+        annotate(snapshot.offers)
+        for _, trader in ipairs(snapshot.traders or {}) do annotate(trader.board) end
+        for _, mission in ipairs(snapshot.active or {}) do
+            mission.empdaSupplyLoading = mission.item ~= nil
+                and Supply.isLoading(supplies, Supply.operationId(mission.item))
+        end
+        return snapshot
+    end
 end
 
 Traders.Take = function(player, itemType, amount, ids)
@@ -325,7 +418,7 @@ Traders.Take = function(player, itemType, amount, ids)
     end
     local ok, consumed = pcall(function()
         return hideouts.with(home, function()
-            return index.consumeUpgrade(player, definition, store())
+            return consumeMissionSupplies(player, definition)
         end)
     end)
     upgrades.itemMatchesRequirement = currentMatcher
@@ -380,7 +473,7 @@ if okStory and okMail and type(Story) == "table" and type(Story.Answer) == "func
         end
         local ok, consumed = pcall(function()
             return hideouts.with(home, function()
-                return index.consumeUpgrade(player, {requirements = requirements}, store())
+                return consumeMissionSupplies(player, {requirements = requirements})
             end)
         end)
         upgrades.itemMatchesRequirement = currentMatcher

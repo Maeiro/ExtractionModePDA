@@ -1,5 +1,10 @@
 local Supply = {}
 
+function Supply.isLoading(snapshot, id)
+    return type(snapshot) == "table" and snapshot.enabled == true
+        and (snapshot.ready ~= true or (id ~= nil and (snapshot.counts or {})[id] == nil))
+end
+
 function Supply.questId(questId)
     return "EMPDA_Quest:" .. tostring(questId or "")
 end

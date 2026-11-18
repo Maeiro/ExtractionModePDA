@@ -1,4 +1,7 @@
 {
+  "UI_PRPGE_EMPD_SupplyLoading": "Checking hideout items...",
+  "UI_ExtractionModePDA_SupplyLoading": "Checking hideout items...",
+  "UI_PRPGE_EMPD_OfferHave": "You have %1",
   "UI_ExtractionModePDA_Title": "EXTRACTION MODE",
   "UI_ExtractionModePDA_Tab": "EXTRACTION",
   "UI_ExtractionModePDA_Intro": "Field operations, hideout services and deployment.",

@@ -80,10 +80,73 @@ local function patchStoryAvailability()
     return true
 end
 
+local offerDraw
+local offerColors = {empty = {1, 0.36, 0.30}, partial = {1, 0.83, 0.40}, ready = {0.40, 0.92, 0.55}}
+
+local function patchOfferRenderer(name)
+    local ok, page = pcall(require, name)
+    if not ok or type(page) ~= "table" or type(page.Render) ~= "function" then return false end
+    if page._empdaOfferColors then return true end
+    local original = page.Render
+    page.Render = function(ui, ...)
+        local previousDraw = rawget(ui, "drawTextZoomed")
+        local draw = ui.drawTextZoomed
+        local previousOffer = offerDraw
+        local context = {}
+        offerDraw = context
+        ui.drawTextZoomed = function(self, text, x, y, zoom, r, g, b, alpha, font)
+            local color = context.color
+            context.color = nil
+            if color then r, g, b = color[1], color[2], color[3] end
+            return draw(self, text, x, y, zoom, r, g, b, alpha, font)
+        end
+        local success, result = pcall(original, ui, ...)
+        ui.drawTextZoomed = previousDraw
+        offerDraw = previousOffer
+        if not success then error(result) end
+        return result
+    end
+    page._empdaOfferColors = true
+    return true
+end
+
+local function patchTraderOffers()
+    local ok, traders = pcall(require, "PRPGE_TradersClient")
+    if not ok or type(traders) ~= "table" or type(traders.MissionGoal) ~= "function" then return false end
+    if traders._empdaOfferCounts then return true end
+    local original = traders.MissionGoal
+    traders.MissionGoal = function(mission)
+        local goal = original(mission)
+        if mission.empdaSupplyLoading == true then
+            if offerDraw then offerDraw.color = offerColors.partial end
+            local key = "UI_PRPGE_EMPD_SupplyLoading"
+            local label = getText and getText(key) or key
+            if label == key then label = "Checking hideout items..." end
+            return goal .. " (" .. label .. ")"
+        end
+        local available = tonumber(mission.empdaAvailable)
+        if available == nil then return goal end
+        if offerDraw then
+            offerDraw.color = available <= 0 and offerColors.empty
+                or available >= (tonumber(mission.n) or 1) and offerColors.ready or offerColors.partial
+        end
+        local key = "UI_PRPGE_EMPD_OfferHave"
+        local label = getText and getText(key, tostring(available)) or key
+        if label == key then label = "You have " .. tostring(available) end
+        return goal .. " (" .. label .. ")"
+    end
+    traders._empdaOfferCounts = true
+    return true
+end
+
 local function waitForQuestPanel()
     local panelPatched = patchQuestPanel()
     local storyPatched = patchStoryAvailability()
-    if panelPatched and storyPatched and Events and Events.OnTick and Events.OnTick.Remove then
+    local traderPatched = patchTraderOffers()
+    local operationsPatched = patchOfferRenderer("PRPGE_PDAOperations")
+    local boardPatched = patchOfferRenderer("PRPGE_PDATraders")
+    if panelPatched and storyPatched and traderPatched and operationsPatched and boardPatched
+        and Events and Events.OnTick and Events.OnTick.Remove then
         Events.OnTick.Remove(waitForQuestPanel)
     end
 end

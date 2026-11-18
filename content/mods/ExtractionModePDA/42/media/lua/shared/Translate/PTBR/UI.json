@@ -1,4 +1,7 @@
 {
+  "UI_PRPGE_EMPD_SupplyLoading": "Verificando itens do esconderijo...",
+  "UI_ExtractionModePDA_SupplyLoading": "Verificando itens do esconderijo...",
+  "UI_PRPGE_EMPD_OfferHave": "Você tem %1",
   "UI_ExtractionModePDA_Title": "MODO DE EXTRAÇÃO",
   "UI_ExtractionModePDA_Tab": "EXTRAÇÃO",
   "UI_ExtractionModePDA_Intro": "Operações de campo, serviços do esconderijo e mobilização.",

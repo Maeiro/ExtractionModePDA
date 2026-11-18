@@ -22,6 +22,9 @@ The integration is independent of Viewpoint Extraction Support. Install this mod
 - Routes deployment, invitations, and administrative and debug tools through the PDA's window docking.
 - Provides a dashboard with destination selection, raid readiness, hideout generator controls, and a mission summary.
 - With Extraction Mode's Hideout Container Supply enabled, counts eligible items in accessible hideout containers toward Extraction Mode mission requirements, Survivor PDA trader operations, and Survivor story deliveries, and lets players hand those items in from the hideout.
+- Shows how many eligible items are available before accepting a delivery job, both in Operations offers and trader job boards. Counts include accessible hideout supplies while inside the hideout.
+- Shows a hideout item loading notice while the initial supply count or a newly offered job's item count is pending. Offer quantities use red for none, yellow for partial quantities, and green for sufficient quantities.
+- Reconciles hideout totals after successful mission deliveries so other deliveries can proceed without waiting for a full rescan. Transactions still validate the actual items on the server; unsafe or failed reconciliation falls back to rescanning.
 - Shows raid loot refresh progress for each location when Extraction Mode provides the refresh data.
 - Shows a contextual board button in Operation Status while Extraction Mode makes boarding available, using its native action.
 - Lets each character select an unfinished mission to track, showing its objectives and requirements on the dashboard.

@@ -452,6 +452,11 @@ function Dashboard.new(context)
         mission.y = mission.y + 12
         local missionItems = {}
         if tracked then
+            if inside(data) and #(tracked.requirements or {}) > 0
+                and HideoutMissionSupply.isLoading(data.hideoutUpgradeSupply, HideoutMissionSupply.questId(tracked.id)) then
+                mission:add(text("SupplyLoading", "Checking hideout items..."))
+                mission.y = mission.y + 6
+            end
             local progress, turnIn = trackedFlow(data, tracked, innerW)
             for _, run in ipairs(progress.runs) do run.y = run.y + mission.y; mission.runs[#mission.runs + 1] = run end
             mission.y = mission.y + progress.y
