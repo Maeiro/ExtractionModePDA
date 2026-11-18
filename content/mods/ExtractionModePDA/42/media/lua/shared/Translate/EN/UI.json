@@ -52,6 +52,8 @@
   "UI_ExtractionModePDA_NoVehicles": "NO VEHICLES",
   "UI_ExtractionModePDA_ActiveRaid": "ACTIVE RAID",
   "UI_ExtractionModePDA_DestinationHint": "Changing destination clears the team's ready status.",
+  "UI_ExtractionModePDA_LootRefreshProgress": "Loot refresh: %1/%2 raids",
+  "UI_ExtractionModePDA_LootRefreshDisabled": "Loot refresh disabled",
   "UI_ExtractionModePDA_Waiting": "Waiting for Extraction Mode state...",
   "UI_ExtractionModePDA_Hideout": "Hideout",
   "UI_ExtractionModePDA_FuelHours": "Fuel remaining: %1 in-game hours",

@@ -52,6 +52,8 @@
   "UI_ExtractionModePDA_NoVehicles": "SEM VEÍCULOS",
   "UI_ExtractionModePDA_ActiveRaid": "INCURSÃO ATIVA",
   "UI_ExtractionModePDA_DestinationHint": "Alterar o destino cancela a prontidão da equipe.",
+  "UI_ExtractionModePDA_LootRefreshProgress": "Refresh de itens: %1/%2 incursões",
+  "UI_ExtractionModePDA_LootRefreshDisabled": "Refresh de itens desativado",
   "UI_ExtractionModePDA_Waiting": "Aguardando os dados do Modo de Extração...",
   "UI_ExtractionModePDA_Hideout": "Esconderijo",
   "UI_ExtractionModePDA_FuelHours": "Autonomia: %1 horas no jogo",

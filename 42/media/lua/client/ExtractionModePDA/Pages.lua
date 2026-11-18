@@ -5,6 +5,7 @@ local Icons = require "ExtractionModePDA/ItemIcons"
 local ServiceSelector = require "ExtractionModePDA/ServiceSelector"
 local Prices = require "ExtractionModePDA/ServicePrices"
 local Style = require "ExtractionModePDA/BarterStyle"
+local HideoutMissionSupply = require "ExtractionModePDA/HideoutMissionSupply"
 local Pages = {}
 local serviceIcons = {
     wound = "Base.FirstAidKit", clothing = "Base.Needle",
@@ -228,6 +229,14 @@ function Pages.new(context, widgets)
         end
         local showCompleted = pageState.completed and not reference(data)
         local counts = countsFor(active, "requirements", api.requirementCounts, data)
+        local missionCounts = {}
+        for id, row in pairs(counts) do
+            missionCounts[id] = {}
+            for index, count in pairs(row) do missionCounts[id][index] = count end
+        end
+        if inside(data) then
+            HideoutMissionSupply.addQuestCounts(missionCounts, active, data.hideoutUpgradeSupply)
+        end
         page.card(text("Missions", "Missions"), nil, {
             action(text("ActiveMissions", "Active missions"), function() pageState.completed = false end, true, not showCompleted),
             action(modeText("Completed", "COMPLETED"), function() pageState.completed = true end, not reference(data), showCompleted),
@@ -246,7 +255,7 @@ function Pages.new(context, widgets)
                 if goal.type == "raid_visit" and data.raidVisitSuccessful ~= true then canTurnIn = false end
             end
             for index, item in ipairs(def.requirements or {}) do
-                if ((counts[id] or {})[index] or 0) < (tonumber(item.amount) or 0) then canTurnIn = false end
+                if ((missionCounts[id] or {})[index] or 0) < (tonumber(item.amount) or 0) then canTurnIn = false end
             end
             if not showCompleted then
                 actions[#actions + 1] = action(isTracked and text("Untrack", "STOP TRACKING") or text("Track", "TRACK MISSION"),
@@ -283,7 +292,7 @@ function Pages.new(context, widgets)
                                 .. (data.raidVisitSuccessful and "1/1" or "0/1"))
                         end
                     end
-                    requirements(flow, def.requirements, counts[id] or {}, api.label)
+                    requirements(flow, def.requirements, missionCounts[id] or {}, api.label)
                     for _, skill in ipairs(def.skillRequirements or {}) do
                         Icons.row(flow, api.label(skill) .. ": " .. api.skillLevel(player(), skill) .. "/" .. (skill.level or 0),
                             Icons.skill(skill), api.skillLevel(player(), skill) < (skill.level or 0))

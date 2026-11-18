@@ -21,6 +21,8 @@ The integration is independent of Viewpoint Extraction Support. Install this mod
 - Keeps the original two-column Garage layout, with saved vehicles and trailers beside the preview and controls. Vehicle previews use Extraction Mode's native 3D model when compatible, with its illustration fallback otherwise.
 - Routes deployment, invitations, and administrative and debug tools through the PDA's window docking.
 - Provides a dashboard with destination selection, raid readiness, hideout generator controls, and a mission summary.
+- With Extraction Mode's Hideout Container Supply enabled, counts eligible items in accessible hideout containers toward Extraction Mode mission requirements, Survivor PDA trader operations, and Survivor story deliveries, and lets players hand those items in from the hideout.
+- Shows raid loot refresh progress for each location when Extraction Mode provides the refresh data.
 - Shows a contextual board button in Operation Status while Extraction Mode makes boarding available, using its native action.
 - Lets each character select an unfinished mission to track, showing its objectives and requirements on the dashboard.
 - Shows the requesting contact's emblem on mission cards and waits for the PDA's native loading animation before displaying Extraction content or accepting page input.

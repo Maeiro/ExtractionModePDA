@@ -7,12 +7,16 @@
 	"visibility"		"0"
 	"title"		"Extraction Mode PDA Integration"
 	"description"		"[h1]Extraction Mode PDA Integration[/h1]
-Adds Extraction Mode screens to the ProjectRPGExpanded Survivor PDA.
+Adds Extraction Mode screens to the ProjectRPGExpanded Survivor PDA and connects missions to eligible items stored in Extraction Mode hideouts.
 [h2]Features[/h2]
 [list][*]Adds an Extraction tab and lets you choose it as the PDA's startup screen.
-[*]Provides dedicated PDA pages for the overview, upgrades, missions, barter and garage, with scrolling and the original two-column garage layout.
-[*]Shows item icons for upgrade and mission requirements, skill book volumes, and mission rewards.
-[*]Organizes barter offers into trader tabs and provides named target selectors for repair services.
+[*]Provides dedicated pages for the overview, upgrades, missions, barter and garage, with scrolling and the original two-column garage layout.
+[*]Shows item icons for upgrade and mission requirements, skill book volumes, requesting contact emblems, and mission rewards.
+[*]Counts eligible items in accessible hideout containers toward Extraction Mode missions, Survivor PDA trader operations, and Survivor story deliveries. Eligible items can be handed in from the hideout. Requires Extraction Mode's Hideout Container Supply option.
+[*]Shows loot refresh progress for each raid location when Extraction Mode provides the refresh data.
+[*]Organizes barter contacts in a sidebar with animated 3D portraits, trust meters, item and service filters, and named service target selectors.
+[*]Allows service payments from carried cash or the PDA bank account. Configure service prices in Sandbox Options; dedicated servers use server-side prices and validation.
+[*]Uses Extraction Mode's native 3D garage previews when compatible, with an illustration fallback.
 [*]Integrates destination selection, deployment, social, administration and debug screens with the PDA.
 [*]Shows destination, team readiness, hideout generator controls and a mission summary on the dashboard.
 [*]Shows a contextual boarding button when Extraction Mode allows boarding, using its native action.
@@ -31,5 +35,5 @@ This addon is independent of Viewpoint Extraction Support. If the installed PDA 
 
 Workshop ID: 3831366933
 Mod ID: ExtractionModePDA"
-	"changenote" "0.2.1: Improves upgrade and mission item icons, adds trader tabs and named service target selectors, and protects the PDA garage 3D preview."
+	"changenote" "Adds hideout container item checks for Extraction and Survivor PDA missions, loot refresh progress for raid locations, and improves mission requirement icons."
 }

@@ -1,5 +1,6 @@
 local Tracking = require "ExtractionModePDA/QuestTracking"
 local Pages = require "ExtractionModePDA/Pages"
+local HideoutMissionSupply = require "ExtractionModePDA/HideoutMissionSupply"
 local Dashboard = {}
 local sample = {}
 
@@ -38,8 +39,13 @@ function Dashboard.new(context)
         if style.subtitle then
             ui:drawText(title, x + 12, y + 8, foreground[1], foreground[2], foreground[3],
                 enabled == false and 0.4 or 1, UIFont.Small)
-            ui:drawText(Layout.fit(style.subtitle, UIFont.Small, w - 24), x + 12, y + 10 + Layout.height(UIFont.Small),
+            local lineHeight = Layout.height(UIFont.Small)
+            ui:drawText(Layout.fit(style.subtitle, UIFont.Small, w - 24), x + 12, y + 10 + lineHeight,
                 pda.P.muted[1], pda.P.muted[2], pda.P.muted[3], enabled == false and 0.4 or 1, UIFont.Small)
+            if style.detail then
+                ui:drawText(Layout.fit(style.detail, UIFont.Small, w - 24), x + 12, y + 10 + 2 * lineHeight,
+                    pda.P.muted[1], pda.P.muted[2], pda.P.muted[3], enabled == false and 0.4 or 1, UIFont.Small)
+            end
         else
             ui:drawTextCentre(title, x + w / 2, y + (rect.h - Layout.height(UIFont.Small) + 3) / 2,
                 foreground[1], foreground[2], foreground[3], enabled == false and 0.4 or 1, UIFont.Small)
@@ -63,7 +69,12 @@ function Dashboard.new(context)
         sample = { player = player(), quest = id, at = now, gasoline = 0, counts = {} }
         if player() then
             sample.gasoline = ExtractionMode.Generator.availableGasoline(player():getInventory())
-            if definition then sample.counts = ExtractionMode.Quests.requirementCounts(player(), definition.requirements or {}) end
+            if definition then
+                sample.counts = ExtractionMode.Quests.requirementCounts(player(), definition.requirements or {})
+                if inside(data) then
+                    HideoutMissionSupply.addQuestCounts({[definition.id] = sample.counts}, {definition}, data.hideoutUpgradeSupply)
+                end
+            end
         end
         return sample
     end
@@ -239,6 +250,28 @@ function Dashboard.new(context)
         return choice.deathBlocked == true or (choice.locationRefresh and choice.locationRefresh.blocked and not choice.activeRaidKey)
             or (choice.vehiclesBlocked == true and data.playerInVehicle == true)
     end
+    local function townRefreshLabel(config, town)
+        local status = town.locationRefresh
+        local readOption = config.liveValue or config.value
+        if type(status) == "table" and type(readOption) == "function" then
+            local louisville = status.region == "grand_ohio_mall" or status.region == "louisville"
+                or town.key == "louisville" or town.key == "grand_ohio_mall"
+            local option = louisville and "LocationRefreshLouisvilleAfterRaids" or "LocationRefreshAfterRaids"
+            local ok, total = pcall(readOption, option)
+            total = ok and tonumber(total) or nil
+            if total and total > 0 then
+                total = math.max(1, math.floor(total))
+                local remaining = math.max(0, tonumber(status.remaining) or total)
+                local completed = math.max(0, math.min(total, total - remaining))
+                return text("LootRefreshProgress", "Loot refresh: %1/%2 raids", tostring(completed), tostring(total))
+            end
+        end
+        if type(readOption) == "function" then
+            local ok, enabled = pcall(readOption, "EnableLocationRefresh")
+            if ok and enabled == false then return text("LootRefreshDisabled", "Loot refresh disabled") end
+        end
+        return nil
+    end
     local function beginBody(ui, top, left, width)
         left, width = left or 18, width or ui.width - 36
         local bottom = ui.height - 18
@@ -290,7 +323,12 @@ function Dashboard.new(context)
         local towns, townRows = showTowns and data.townChoices or {}, {}
         local columns = contentW >= 320 and 2 or 1
         local townW = (contentW - 8 * (columns - 1)) / columns
-        local townH = view.buttonH + Layout.height(UIFont.Small) + 4
+        local townRefreshLabels, hasTownRefreshLabel = {}, false
+        for _, choice in ipairs(towns or {}) do
+            townRefreshLabels[choice] = townRefreshLabel(config, choice)
+            if townRefreshLabels[choice] then hasTownRefreshLabel = true end
+        end
+        local townH = view.buttonH + (hasTownRefreshLabel and 2 or 1) * Layout.height(UIFont.Small) + 4
         local townTop = destination.y
         for index, choice in ipairs(towns or {}) do
             local town = choice
@@ -301,6 +339,7 @@ function Dashboard.new(context)
             townRows[#townRows + 1] = {x = ((index - 1) % columns) * (townW + 8),
                 y = townTop + math.floor((index - 1) / columns) * (townH + 8),
                 title = config.townDisplayName(town.key, town.name), subtitle = subtitle,
+                detail = townRefreshLabels[town],
                 selected = data.selectedTownKey == town.key and tostring(data.selectedJoinRaidKey or "") == tostring(town.activeRaidKey or ""),
                 enabled = choosing and not townBlocked(data, town), action = function()
                     local current = getState(0)
@@ -350,7 +389,7 @@ function Dashboard.new(context)
         drawFlow(ui, pda, destination, left + pad, y + pad)
         for _, town in ipairs(townRows) do
             button(ui, pda, left + pad + town.x, y + pad + town.y, townW, town.title, town.action,
-                town.enabled, town.selected, {height = townH, subtitle = town.subtitle})
+                town.enabled, town.selected, {height = townH, subtitle = town.subtitle, detail = town.detail})
         end
         local teamX = narrow and left + pad or left + operationW + pad
         local teamY = narrow and y + leftH + 2 * pad or y + pad
